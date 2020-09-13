@@ -10,6 +10,7 @@
 #include <readline/history.h> 
 #include <unistd.h>
 #include <sys/statvfs.h>
+#include <sys/socket.h> 
 
 #define MAX_CARACTER 80
 #define MAX_PALAVRAS 10
@@ -54,17 +55,20 @@ void execucao_comandos (char** comandos, char** parseiro) {
     if (pos == 0) {
         //dando resultados errados mas no caminho certo.
         struct statvfs buf;
-        statvfs(parseiro[0], &buf);
-        int uso = (buf.f_blocks - buf.f_bfree) * buf.f_frsize;
-        printf("%dB", uso);
+        char diretorio[1000];
+        getcwd(diretorio, sizeof(diretorio));
+        printf("\n%s\n", diretorio);
+        printf("%d\n", statvfs("/tmp/", &buf));
+        unsigned long uso = (buf.f_blocks - buf.f_bfree)*buf.f_bsize;
+        printf("%lu B\n", uso);
         //talvez seja necessário fazer casos diferentes para B, KB, Gb, etc.
     }
     else if (pos == 1) {
         //comandos[1] = "/usr/bin/traceroute";
     }
     else if (pos == 2) {
-        //checar se podemos usar system, acho que não podemos.
-        //system("ep1");
+        
+        execve("bccsh", NULL, NULL);
         //comandos[2] = "./ep1";        
     }
     else if (pos == 3) {
@@ -73,7 +77,7 @@ void execucao_comandos (char** comandos, char** parseiro) {
         mkdir(parseiro[1], 0777);
     }
     else if (pos == 4) {
-        //tem que testar.
+        //funcionando.
         kill(atoi(parseiro[2]), abs(atoi(parseiro[1])));
         //comandos[4] = "kill";
     }
@@ -107,9 +111,10 @@ int main(int argc, char* argv[]) {
     while(1) {
         printa_user_dir();
         char* linha = readline("");
+        add_history(linha);
         char** parseiro = parser(linha);
         execucao_comandos(comandos, parseiro);
-        break;
+        //break;
     }
 
     return 0;
