@@ -5,12 +5,16 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <signal.h>
 #include <readline/readline.h>
 #include <readline/history.h> 
+#include <unistd.h>
+#include <sys/statvfs.h>
 
 #define MAX_CARACTER 80
 #define MAX_PALAVRAS 10
 #define MAX_TAMANHO_PALAVRA 20
+
 
 void printa_user_dir() {
     char* usuario = getenv("USER");
@@ -44,27 +48,38 @@ void execucao_comandos (char** comandos, char** parseiro) {
     char* comando = parseiro[0];
     int pos;
     for (pos = 0; pos < 6; pos++) {
-        if (comandos[pos] == comando) {
+        if (strcmp(comandos[pos], comando) == 0)
             break;
-        }
     }
     if (pos == 0) {
-        //comandos[0] = "/usr/bin/du";
+        //dando resultados errados mas no caminho certo.
+        struct statvfs buf;
+        statvfs(parseiro[0], &buf);
+        int uso = (buf.f_blocks - buf.f_bfree) * buf.f_frsize;
+        printf("%dB", uso);
+        //talvez seja necessário fazer casos diferentes para B, KB, Gb, etc.
     }
     else if (pos == 1) {
         //comandos[1] = "/usr/bin/traceroute";
     }
     else if (pos == 2) {
+        //checar se podemos usar system, acho que não podemos.
+        //system("ep1");
         //comandos[2] = "./ep1";        
     }
     else if (pos == 3) {
-        //mkdir(parseiro[1],);
+        //funcionando.
         //comandos[3] = "mkdir";
+        mkdir(parseiro[1], 0777);
     }
     else if (pos == 4) {
+        //tem que testar.
+        kill(atoi(parseiro[2]), abs(atoi(parseiro[1])));
         //comandos[4] = "kill";
     }
     else if (pos == 5) {
+        //funcionando.
+        symlink(parseiro[2], parseiro[3]);
         //comandos[5] = "ln";
     }
     else {
@@ -93,7 +108,7 @@ int main(int argc, char* argv[]) {
         printa_user_dir();
         char* linha = readline("");
         char** parseiro = parser(linha);
-        exercucao_comandos(comandos, parseiro);
+        execucao_comandos(comandos, parseiro);
         break;
     }
 
