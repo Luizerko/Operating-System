@@ -54,6 +54,7 @@ void execucao_comandos (char** comandos, char** parseiro) {
     }
     if (pos == 0) {
         //dando resultados errados mas no caminho certo.
+        /*
         struct statvfs buf;
         char diretorio[1000];
         getcwd(diretorio, sizeof(diretorio));
@@ -61,14 +62,40 @@ void execucao_comandos (char** comandos, char** parseiro) {
         printf("%d\n", statvfs("/tmp/", &buf));
         unsigned long uso = (buf.f_blocks - buf.f_bfree)*buf.f_bsize;
         printf("%lu B\n", uso);
+        */
+        if(fork() == 0) {
+            char* aux[] = {"/usr/bin/du", "-hs", ".", NULL};
+            execve("/usr/bin/du", aux, NULL);
+        }
+        else {
+            printf("\nExecutando o comando du:\n");
+            waitpid(-1, NULL, 0);
+        }
+        
         //talvez seja necessário fazer casos diferentes para B, KB, Gb, etc.
     }
     else if (pos == 1) {
+        if(fork() == 0) {
+            char* aux[] = {"/usr/bin/traceroute", "www.google.com.br", NULL};
+            execve("/usr/bin/traceroute", aux, NULL);
+        }
+        else {
+            printf("\nExecutando o comando traceroute:\n");
+            waitpid(-1, NULL, 0);
+        }
         //comandos[1] = "/usr/bin/traceroute";
     }
     else if (pos == 2) {
-        
-        execve("bccsh", NULL, NULL);
+
+        if(fork() == 0) {
+            char* aux[] = {NULL};
+            execve("bccsh", aux, NULL);
+        }
+        else {
+            printf("\nEntrando em EP1:\n");
+            waitpid(-1, NULL, 0);
+        }
+            
         //comandos[2] = "./ep1";        
     }
     else if (pos == 3) {
