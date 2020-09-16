@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
     srand(1);
 
     FILE* ptr;
-    ptr = fopen("simulacao.txt", "w+");
+    ptr = fopen("trace.txt", "w+");
     
     int contador = atoi(argv[1]);
 

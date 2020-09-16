@@ -22,7 +22,7 @@ void printa_user_dir() {
     char diretorio[1000];
     getcwd(diretorio, sizeof(diretorio));
 
-    printf("{%s@%s} ", usuario, diretorio);
+    printf("\n{%s@%s} ", usuario, diretorio);
 }
 
 char** parser(char* linha) {
@@ -45,7 +45,6 @@ char** parser(char* linha) {
 }
 
 void execucao_comandos (char** comandos, char** parseiro) {
-    /*for(int i = 0; i < MAX_PALAVRAS && parseiro[i] != NULL; i++)*/
     char* comando = parseiro[0];
     int pos;
     for (pos = 0; pos < 6; pos++) {
@@ -54,15 +53,6 @@ void execucao_comandos (char** comandos, char** parseiro) {
     }
     if (pos == 0) {
         //dando resultados errados mas no caminho certo.
-        /*
-        struct statvfs buf;
-        char diretorio[1000];
-        getcwd(diretorio, sizeof(diretorio));
-        printf("\n%s\n", diretorio);
-        printf("%d\n", statvfs("/tmp/", &buf));
-        unsigned long uso = (buf.f_blocks - buf.f_bfree)*buf.f_bsize;
-        printf("%lu B\n", uso);
-        */
         if(fork() == 0) {
             char* aux[] = {"/usr/bin/du", "-hs", ".", NULL};
             execve("/usr/bin/du", aux, NULL);
@@ -71,8 +61,7 @@ void execucao_comandos (char** comandos, char** parseiro) {
             printf("\nExecutando o comando du:\n");
             waitpid(-1, NULL, 0);
         }
-        
-        //talvez seja necessário fazer casos diferentes para B, KB, Gb, etc.
+        //comandos[0] = "/usr/b"
     }
     else if (pos == 1) {
         if(fork() == 0) {
@@ -88,8 +77,8 @@ void execucao_comandos (char** comandos, char** parseiro) {
     else if (pos == 2) {
 
         if(fork() == 0) {
-            char* aux[] = {NULL};
-            execve("bccsh", aux, NULL);
+            char* aux[] = {"./ep1", NULL};
+            execve("./ep1", aux, NULL);
         }
         else {
             printf("\nEntrando em EP1:\n");
