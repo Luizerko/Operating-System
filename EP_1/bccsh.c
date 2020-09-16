@@ -77,7 +77,7 @@ void execucao_comandos (char** comandos, char** parseiro) {
     else if (pos == 2) {
 
         if(fork() == 0) {
-            char* aux[] = {"./ep1", NULL};
+            char* aux[] = {"./ep1", parseiro[1], "trace.txt", "simulacao.txt", NULL};
             execve("./ep1", aux, NULL);
         }
         else {
