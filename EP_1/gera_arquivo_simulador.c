@@ -3,7 +3,7 @@
 #include <time.h>
 
 int main(int argc, char* argv[]) {
-    srand(1);
+    srand(2);
 
     FILE* ptr;
     ptr = fopen("trace.txt", "w+");
@@ -16,7 +16,6 @@ int main(int argc, char* argv[]) {
         int deadline = rand()%1000 + t0 + dt;    
         fprintf(ptr, "processo%d %d %d %d\n", i, t0, dt, deadline);
     }
-    
     fclose(ptr);
 
     return 0;

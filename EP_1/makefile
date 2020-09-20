@@ -1,6 +1,6 @@
 CFLAGS = -g -Wall
 LFLAGS = -lreadline
-LFLASG2 = -pthread
+LFLAGS2 = -pthread
 
 all: bccsh
 

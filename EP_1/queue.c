@@ -4,14 +4,14 @@
 #include "processo.h"
 
 static Processo** vetor;
-static int tam;
-static int ini;
-static int fim;
-static int n;
+static long long int tam;
+static long long int ini;
+static long long int fim;
+static long long int n;
 
-static void resize(int novo_tamanho) {
+static void resize(long long int novo_tamanho) {
     Processo** auxiliar = malloc(novo_tamanho*sizeof(Processo*));
-    int iterador = 0;
+    long long int iterador = 0;
     if(n == tam) {
         while(iterador < tam) {
             auxiliar[iterador] = vetor[ini];
@@ -81,7 +81,7 @@ bool queueEmpty() {
     return 1;
 }
 
-int queueSize() {
+long long int queueSize() {
     return n;
 }
 

@@ -10,6 +10,6 @@ Processo* queueRemove();
 
 bool queueEmpty();
 
-int queueSize();
+long long int queueSize();
 
 void queueFree();
