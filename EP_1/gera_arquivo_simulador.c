@@ -11,10 +11,10 @@ int main(int argc, char* argv[]) {
     int contador = atoi(argv[1]);
 
     for(int i = 0; i < contador; i++) {
-        int t0 = rand()%1000;
-        int dt =rand()%1000;
-        int deadline = rand()%1000 + t0 + dt;    
-        fprintf(ptr, "processo%d %d %d %d\n", i, t0, dt, deadline);
+        int t0 = i + 1;
+        int dt = rand()%1000;
+        long int deadline = ((long int)rand())*((long int)1000) + (long int)t0 + (long int)dt;    
+        fprintf(ptr, "processo%d %d %d %ld\n", i, t0, dt, deadline);
     }
     fclose(ptr);
 
