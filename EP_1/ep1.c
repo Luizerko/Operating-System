@@ -4,7 +4,9 @@
 #include <pthread.h>
 #include "queue.h"
 #include "processo.h"
-#include "time.h"
+#include "time.h" 
+
+pthread_t t1, t2, t3, t4;
 
 void* thread(void * arg) {
     Processo* processo = (Processo*)arg;
@@ -15,13 +17,89 @@ void* thread(void * arg) {
 
 }
 
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
+
+void* thread2_1(void * arg) {
+    Processo* processo = (Processo*)arg;
+    while(processo->dt > 0)
+        pthread_mutex_lock(&mutex);
+        processo->dt--;
+        pthread_mutex_unlock(&mutex);
+    
+    printf("terminei o processo %s\n", processo->nome);
+    pthread_exit(NULL);
+}
+
+void* thread2_2(void* arg) {
+    Processo** heap_minimo = (Processo**)arg;
+    Processo* processo;
+    long int indice = 1;
+    while(heap_minimo != NULL) {
+        pthread_mutex_lock(&mutex);
+        processo = queueRemove();
+        Processo* aux = heap_minimo[1];
+        if(aux->dt == 0){
+            heap_remove()
+            indice--;
+        }
+        heap_insert(heap_minimo, indice, processo); //com swin
+        indice++;
+        if (heap_minimo[1] == aux) {
+            pthread_cancel(&t1); //qualquer coisa bota o join pra ver se rola.
+            pthread_create(&t1, NULL, thread2_1, heap_minimo[1]);
+        }
+        pthread_mutex_unlock(&mutex);
+    }
+}
+
+void heap_insert(Processo** heap_minimo, long int indice, Processo* processo) {
+    heap_minimo[indice] = processo;
+    swim(indice, heap_minimo);
+}
+
+void heap_remove(Processo** heap_minimo, long int indice) {
+    heap_minimo[1] = heap_minimo[indice-1];
+    sink(indice, heap_minimo);
+}
+
+void sink(long int indice, Processo* processos[]) {
+    Processo* aux = processos[1];
+    long int pai = 1;
+    while(2*pai <= indice-1) {
+        if(processos[pai*2]->dt < processos[(pai*2)+1]->dt) {
+            if(processos[pai*2]->dt < aux->dt) {
+                processos[pai] = processos[pai*2];
+                pai = 2*pai;
+            }
+            else break;
+        }
+        else {
+            if(processos[(pai*2) + 1]->dt < aux->dt) {
+                processos[pai] = processos[(pai*2) + 1];
+                pai = (2*pai) + 1;
+            }
+            else break;
+        }
+    }
+    processos[pai] = aux;
+}
+
+void swim (long int filho, Processo* processos[]) {
+    long int pai = filho/2;
+    Processo* aux = processos[filho];
+    while (filho > 1 && processos[pai]->dt > processos[filho]->dt) {
+        processos[filho] = processos[pai];
+        filho = pai;
+        pai = filho/2;
+    }
+    processos[pai] = aux;
+}
+
 int main (int argc, char* argv[]) {
 
     FILE* ptr = fopen("trace.txt", "r+");
 
     FILE* ptr2 = fopen("simulacao.txt", "w+");
-
-    pthread_t t1, t2, t3, t4;
 
     //int tempo_thread[4] = ([4] -1);
 
@@ -104,7 +182,19 @@ int main (int argc, char* argv[]) {
 
     } 
     else if (atoi(argv[1]) == 2) {
+        queueInit();
+        Processo* processo;
+        while(!feof(ptr)) {
+            processo = malloc(sizeof(Processo));
+            
+            fscanf(ptr, "%s %d %d %d", processo->nome, &(processo->t0), &(processo->dt), &(processo->deadline));
+
+            queueInsert(processo);
+            
+        }
         
+        Processo* heap_minimo[queueSize() + 1];
+
     } 
     else {
         
