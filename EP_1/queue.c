@@ -75,6 +75,13 @@ Processo* queueRemove() {
     return NULL;
 }
 
+Processo* queueTop() {
+    if(!queueEmpty()) {
+        return vetor[ini];
+    }
+    return NULL;
+}
+    
 bool queueEmpty() {
     if(n > 0)
         return 0;

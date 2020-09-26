@@ -8,6 +8,8 @@ void queueInsert(Processo*);
 
 Processo* queueRemove();
 
+Processo* queueTop();
+
 bool queueEmpty();
 
 long long int queueSize();

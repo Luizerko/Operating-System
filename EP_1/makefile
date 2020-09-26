@@ -2,7 +2,7 @@ CFLAGS = -g -Wall
 LFLAGS = -lreadline
 LFLAGS2 = -pthread
 
-all: bccsh
+all: bccsh gera_arquivo_simulador ep1
 
 bccsh: bccsh.o
 	gcc bccsh.o -o bccsh ${LFLAGS}
