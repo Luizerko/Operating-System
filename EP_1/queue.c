@@ -81,7 +81,14 @@ Processo* queueTop() {
     }
     return NULL;
 }
-    
+
+Processo* queueItera(long int indice) {
+    if(!queueEmpty() && indice < queueSize()) {
+        return vetor[indice];
+    }
+    return NULL;
+}
+
 bool queueEmpty() {
     if(n > 0)
         return 0;

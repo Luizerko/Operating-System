@@ -7,6 +7,7 @@ typedef struct processo {
     int t0; 
     int dt; 
     int deadline;
+    long int id;
 } Processo;
 
 #endif

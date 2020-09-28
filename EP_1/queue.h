@@ -10,6 +10,8 @@ Processo* queueRemove();
 
 Processo* queueTop();
 
+Processo* queueItera(long int);
+
 bool queueEmpty();
 
 long long int queueSize();
