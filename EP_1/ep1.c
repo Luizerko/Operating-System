@@ -99,34 +99,27 @@ typedef struct node {
 } Node;
 
 int lista_vazia(Node* lista_first) {
-    if(lista_first->processo == NULL)
+    if(lista_first == NULL || lista_first->processo == NULL)
         return 1;
     return 0;
 }
 
-void lista_insere(Node** lista_first, Node** lista_last, Processo* processo) {
+void lista_insere(Node** lista_first, Node** lista_last, Node* no) {
     if (lista_vazia((*lista_first))) {
-        (*lista_first)->processo = processo;
-        (*lista_first)->contador = 0;
+        (*lista_first) = no;
         (*lista_first)->prox = (*lista_first);
         (*lista_last) = (*lista_first);
         return;
     }
     else if (!lista_vazia((*lista_first)) && (*lista_first) == (*lista_last)) {
-        Node* novo = malloc(sizeof(Node));
-        novo->processo = processo;
-        novo->contador = 0; //decidir o quantum.
-        (*lista_last) = novo;
+        (*lista_last) = no;
         (*lista_last)->prox = (*lista_first);
         (*lista_first)->prox = (*lista_last);
         return;
     }
-    Node* novo = malloc(sizeof(Node));
-    novo->processo = processo;
-    novo->contador = 0; //decidir o quantum.
-    (*lista_last)->prox = novo;
-    novo->prox = (*lista_first);
-    (*lista_last) = novo;
+    (*lista_last)->prox = no;
+    no->prox = (*lista_first);
+    (*lista_last) = no;
 }
 
 void lista_remove(Node** lista_first, Node** lista_last) {
@@ -148,7 +141,7 @@ void* thread3(void * arg) {
         pthread_mutex_lock(&mutex_v[no->processo->id]);
         no->processo->dt--;
         tempo++;
-        no->contador++;
+        no->contador += 1;
         sleep(1);
         if(no->processo->dt == 0)
             printf("terminei o processo %s\n", no->processo->nome);
@@ -214,6 +207,7 @@ int main (int argc, char* argv[]) {
 
     } 
     else if (atoi(argv[1]) == 2) {
+        long long int contador_contexto = 0;
         queueInit();
         tempo = 0;
         Processo* processo;
@@ -222,11 +216,12 @@ int main (int argc, char* argv[]) {
             processo = malloc(sizeof(Processo));
             
             fscanf(ptr, "%s %d %d %d", processo->nome, &(processo->t0), &(processo->dt), &(processo->deadline));
-            processo->id = contador;
-            contador++;
             
-            if(strcmp(processo->nome, ""))
+            if(strcmp(processo->nome, "")) {
+                processo->id = contador;
+                contador++;
                 queueInsert(processo);
+            }
             
         }
 
@@ -273,14 +268,19 @@ int main (int argc, char* argv[]) {
                 processo = queueTop();
             }
 
+            if(!heap_empty(indice) && aux != heap_minimo[1])
+                contador_contexto++;
+
             if (queueEmpty() && heap_empty(indice)) {
                 free(heap_minimo);
                 heap_minimo = NULL;
             }
 
+            /*
             for(int j = 1; j < indice; j++) {
                 printf("-> Tô no heap! %s %d %d %d %ld\n", heap_minimo[j]->nome, heap_minimo[j]->t0, heap_minimo[j]->dt, heap_minimo[j]->deadline, heap_minimo[j]->id);
             }
+            */
 
             if(!heap_empty(indice))
                 pthread_mutex_unlock(&mutex_v[heap_minimo[1]->id]);
@@ -291,9 +291,11 @@ int main (int argc, char* argv[]) {
             pthread_join(t_v[i], NULL);
         }
 
+        fprintf(ptr2, "%lld\n", contador_contexto);
+
     } 
     else {
-        
+        long long int contador_contexto = 0;
         queueInit();
         tempo = 0;
         Processo* processo;
@@ -303,15 +305,19 @@ int main (int argc, char* argv[]) {
             processo = malloc(sizeof(Processo));
             
             fscanf(ptr, "%s %d %d %d", processo->nome, &(processo->t0), &(processo->dt), &(processo->deadline));
-            processo->id = contador;
-            contador++;
             
-            if(strcmp(processo->nome, ""))
+            if(strcmp(processo->nome, "")) {
+                processo->id = contador;
+                contador++;
                 queueInsert(processo);
+            }
             
         }
 
         Node** nos = malloc(queueSize()*sizeof(Node*));
+        for(int i = 0; i < queueSize(); i++) {
+            nos[i] = malloc(sizeof(Node));
+        }
 
         t_v = malloc(queueSize()*sizeof(pthread_t));
         pthread_mutex_init(&mutex, NULL);
@@ -338,6 +344,7 @@ int main (int argc, char* argv[]) {
             
             pthread_mutex_lock(&mutex);
             processo = queueTop();
+            Processo* auxiliar = lista_first->processo;
             
             if(lista_vazia(lista_first)) {
                 tempo++;
@@ -349,10 +356,10 @@ int main (int argc, char* argv[]) {
                 fprintf(ptr2, "%s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
                 lista_remove(&lista_first, &lista_last);
             }
-            
+
             if(!lista_vazia(lista_first) && lista_first->contador >= quantum) {
                 lista_first->contador = 0;
-                if(!(lista_first != lista_last)) {
+                if(lista_first != lista_last) {
                     lista_first = lista_first->prox;
                     lista_last = lista_last->prox;
                 }
@@ -360,7 +367,7 @@ int main (int argc, char* argv[]) {
 
             while(processo != NULL && processo->t0 <= tempo) {
                 queueRemove();
-                lista_insere(&lista_first, &lista_last, processo); //com swin
+                lista_insere(&lista_first, &lista_last, nos[processo->id]); //com swin
                 processo = queueTop();
             }
 
@@ -368,14 +375,34 @@ int main (int argc, char* argv[]) {
                 free(lista_first);
                 lista_first = NULL;
             }
+            
+            /*
+            printf("\n");
+            Node* auxiliar = lista_first;
+            if(lista_first != NULL && !lista_vazia(lista_first)) {
+                printf("%s -> ", auxiliar->processo->nome);
+                auxiliar = auxiliar->prox;
+            }
+            while(lista_first != NULL && !lista_vazia(lista_first) && auxiliar != NULL && auxiliar != lista_first) {
+                printf("%s -> ", auxiliar->processo->nome);
+                auxiliar = auxiliar->prox;
+            }
+            printf("\n");
+            */
 
-            if(!lista_vazia(lista_first))
+            if(!lista_vazia(lista_first)) {
+                if(auxiliar != lista_first->processo)
+                    contador_contexto++;
                 pthread_mutex_unlock(&mutex_v[lista_first->processo->id]);
+            }
         }
 
         for (int i = 0; i < queueSize(); i++) {
             pthread_join(t_v[i], NULL);
         }
+
+        fprintf(ptr2, "%lld\n", contador_contexto);
+
     }
 
     fclose(ptr);
