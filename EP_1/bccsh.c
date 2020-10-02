@@ -10,7 +10,7 @@
 #include <readline/history.h> 
 #include <unistd.h>
 #include <sys/statvfs.h>
-#include <sys/socket.h> 
+#include <sys/socket.h>
 
 #define MAX_CARACTER 80
 #define MAX_PALAVRAS 10
@@ -75,10 +75,17 @@ void execucao_comandos (char** comandos, char** parseiro) {
         //comandos[1] = "/usr/bin/traceroute";
     }
     else if (pos == 2) {
-
         if(fork() == 0) {
-            char* aux[] = {"./ep1", parseiro[1], "trace.txt", "simulacao.txt", NULL};
-            execve("./ep1", aux, NULL);
+
+            if (parseiro[4] != NULL && !strcmp(parseiro[4], "d")) {
+                char* aux[] = {"./ep1", parseiro[1], parseiro[2], parseiro[3], parseiro[4], NULL};
+                execve("./ep1", aux, NULL);
+            }
+            else {
+                char* aux[] = {"./ep1", parseiro[1], parseiro[2], parseiro[3], NULL};
+                execve("./ep1", aux, NULL);
+            }
+            
         }
         else {
             printf("\nEntrando em EP1:\n");

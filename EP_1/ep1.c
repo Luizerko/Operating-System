@@ -9,6 +9,7 @@
 
 long int tempo = 1;
 long int quantum = 3;
+int flag_d = 0;
 
 pthread_t t1;
 
@@ -18,11 +19,15 @@ pthread_mutex_t* mutex_v;
 
 void* thread(void * arg) {
     Processo* processo = (Processo*)arg;
+    if(flag_d)
+        fprintf(stderr, "Processo %s usando CPU: %d\n", processo->nome, sched_getcpu());
     while(processo->dt > 0) {
         processo->dt--;
         tempo++;
         sleep(1);
     }
+    if(flag_d)
+        fprintf(stderr, "Processo %s na CPU %d terminado\n", processo->nome, sched_getcpu());
     printf("terminei o processo %s\n", processo->nome);
     pthread_exit(NULL);
 }
@@ -79,14 +84,16 @@ int heap_empty(long int indice) {
 
 void* thread2(void * arg) {
     Processo* processo = (Processo*)arg;
+
     while(processo->dt > 0) {
-        //printf("Entrei na thread!\n");
         pthread_mutex_lock(&mutex_v[processo->id]);
+        if(flag_d)
+            fprintf(stderr, "Processo %s usando CPU: %d\n", processo->nome, sched_getcpu());
         processo->dt--;
         tempo++;
         sleep(1);
-        if(processo->dt == 0)
-            printf("terminei o processo %s\n", processo->nome);
+        if(processo->dt == 0 && flag_d)
+            fprintf(stderr, "Processo %s na CPU %d terminado\n", processo->nome, sched_getcpu());
         pthread_mutex_unlock(&mutex);
     }
     pthread_exit(NULL);
@@ -139,22 +146,26 @@ void* thread3(void * arg) {
     while(no->processo->dt > 0) {
         //printf("Entrei na thread!\n");
         pthread_mutex_lock(&mutex_v[no->processo->id]);
+        if(flag_d)
+            fprintf(stderr, "Processo %s usando CPU: %d\n", no->processo->nome, sched_getcpu());
         no->processo->dt--;
         tempo++;
         no->contador += 1;
         sleep(1);
-        if(no->processo->dt == 0)
-            printf("terminei o processo %s\n", no->processo->nome);
+        if(no->processo->dt == 0 && flag_d)
+            fprintf(stderr, "Processo %s na CPU %d terminado\n", no->processo->nome, sched_getcpu());
         pthread_mutex_unlock(&mutex);
     }
     pthread_exit(NULL);
 }
 
 int main (int argc, char* argv[]) {
+    if(argc == 5)
+        flag_d = 1;
 
-    FILE* ptr = fopen("trace.txt", "r+");
+    FILE* ptr = fopen(argv[2], "r+");
 
-    FILE* ptr2 = fopen("simulacao.txt", "w+");
+    FILE* ptr2 = fopen(argv[3], "w+");
 
     if (atoi(argv[1]) == 1) {
         queueInit();
@@ -176,6 +187,8 @@ int main (int argc, char* argv[]) {
 
         if(!queueEmpty()) {
             processo1 = queueRemove();
+            if(flag_d)
+                fprintf(stderr, "Novo processo: %s %d %d %d\n", processo1->nome, processo1->t0, processo1->dt, processo1->deadline);
             if(pthread_create(&t1, NULL, thread, processo1))
                 printf("Dei erro 1!\n");
         }
@@ -184,12 +197,16 @@ int main (int argc, char* argv[]) {
             
             pthread_join(t1, NULL);
             if(flag_escreve) {
+                if(flag_d)
+                    fprintf(stderr, "Finalizacao do processo: %s %ld %ld\n", processo1->nome, tempo, tempo - (long int)processo1->t0);
                 fprintf(ptr2, "%s %ld %ld\n", processo1->nome, tempo, tempo - (long int)processo1->t0);
                 flag_escreve = 0;
             }
             if(!queueEmpty() && processo1->dt == 0 && queueTop()->t0 <= tempo) {
                 processo1 = queueRemove();
                 flag_escreve = 1;
+                if(flag_d)
+                    fprintf(stderr, "Novo processo: %s %d %d %d\n", processo1->nome, processo1->t0, processo1->dt, processo1->deadline);
                 if((a = pthread_create(&t1, NULL, thread, processo1)))
                     printf("Dei erro 1! Erro número: %d!\n", a);
             }
@@ -203,6 +220,8 @@ int main (int argc, char* argv[]) {
         pthread_join(t1, NULL);
         fprintf(ptr2, "%s %ld %ld\n", processo1->nome, tempo, tempo - (long int)processo1->t0);
         
+        if(flag_d)
+            fprintf(stderr, "Mudancas de contexto: %lld\n", tam);
         fprintf(ptr2, "%lld\n", tam);
 
     } 
@@ -236,9 +255,6 @@ int main (int argc, char* argv[]) {
         
         Processo** heap_minimo;
         heap_minimo = malloc((queueSize()+1)*sizeof(Processo*));
-        /*int a;
-        if((a = pthread_create(&t2, NULL, thread2_2, heap_minimo[1])))
-            printf("Dei erro! Erro númeor: %d!\n", a);*/
 
         long int indice = 1;
         while(heap_minimo != NULL) {
@@ -256,14 +272,18 @@ int main (int argc, char* argv[]) {
             }
 
             if(!heap_empty(indice) && aux->dt == 0) {
+                if(flag_d)
+                    fprintf(stderr, "Finalizacao do processo: %s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
                 fprintf(ptr2, "%s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
                 heap_remove(heap_minimo, indice);
                 indice--;
             }
             
             while(processo != NULL && processo->t0 <= tempo) {
+                if (flag_d)
+                    fprintf(stderr, "Novo processo: %s %d %d %d\n", processo->nome, processo->t0, processo->dt, processo->deadline);
                 queueRemove();
-                heap_insert(heap_minimo, indice, processo); //com swin
+                heap_insert(heap_minimo, indice, processo);
                 indice++; 
                 processo = queueTop();
             }
@@ -276,12 +296,6 @@ int main (int argc, char* argv[]) {
                 heap_minimo = NULL;
             }
 
-            /*
-            for(int j = 1; j < indice; j++) {
-                printf("-> Tô no heap! %s %d %d %d %ld\n", heap_minimo[j]->nome, heap_minimo[j]->t0, heap_minimo[j]->dt, heap_minimo[j]->deadline, heap_minimo[j]->id);
-            }
-            */
-
             if(!heap_empty(indice))
                 pthread_mutex_unlock(&mutex_v[heap_minimo[1]->id]);
 
@@ -290,6 +304,9 @@ int main (int argc, char* argv[]) {
         for (int i = 0; i < queueSize(); i++) {
             pthread_join(t_v[i], NULL);
         }
+
+        if(flag_d)
+            fprintf(stderr, "Mundancas de contexto: %lld\n", contador_contexto);
 
         fprintf(ptr2, "%lld\n", contador_contexto);
 
@@ -353,6 +370,8 @@ int main (int argc, char* argv[]) {
 
             if(!lista_vazia(lista_first) && lista_first->processo->dt == 0) {
                 Processo* aux = lista_first->processo;
+                if(flag_d)
+                    fprintf(stderr, "Finalizacao do processo: %s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
                 fprintf(ptr2, "%s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
                 lista_remove(&lista_first, &lista_last);
             }
@@ -366,8 +385,10 @@ int main (int argc, char* argv[]) {
             }
 
             while(processo != NULL && processo->t0 <= tempo) {
+                if (flag_d)
+                    fprintf(stderr, "Novo processo: %s %d %d %d\n", processo->nome, processo->t0, processo->dt, processo->deadline);
                 queueRemove();
-                lista_insere(&lista_first, &lista_last, nos[processo->id]); //com swin
+                lista_insere(&lista_first, &lista_last, nos[processo->id]);
                 processo = queueTop();
             }
 
@@ -375,20 +396,6 @@ int main (int argc, char* argv[]) {
                 free(lista_first);
                 lista_first = NULL;
             }
-            
-            /*
-            printf("\n");
-            Node* auxiliar = lista_first;
-            if(lista_first != NULL && !lista_vazia(lista_first)) {
-                printf("%s -> ", auxiliar->processo->nome);
-                auxiliar = auxiliar->prox;
-            }
-            while(lista_first != NULL && !lista_vazia(lista_first) && auxiliar != NULL && auxiliar != lista_first) {
-                printf("%s -> ", auxiliar->processo->nome);
-                auxiliar = auxiliar->prox;
-            }
-            printf("\n");
-            */
 
             if(!lista_vazia(lista_first)) {
                 if(auxiliar != lista_first->processo)
@@ -400,6 +407,9 @@ int main (int argc, char* argv[]) {
         for (int i = 0; i < queueSize(); i++) {
             pthread_join(t_v[i], NULL);
         }
+
+        if(flag_d)
+            fprintf(stderr, "Mundancas de contexto: %lld\n", contador_contexto);
 
         fprintf(ptr2, "%lld\n", contador_contexto);
 
