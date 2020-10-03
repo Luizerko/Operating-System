@@ -3,7 +3,7 @@
 #include <time.h>
 
 int main(int argc, char* argv[]) {
-    srand(2);
+    srand(time(NULL));
 
     FILE* ptr;
     ptr = fopen("trace.txt", "w+");

@@ -229,6 +229,9 @@ int main (int argc, char* argv[]) {
         FILE* ptr3 = fopen("deadlines_1_10.txt", "a+");
             fprintf(ptr3, "%d\n", cumpre_deadline);
         fclose(ptr3);
+        ptr3 = fopen("contexto_1_10.txt", "a+");
+            fprintf(ptr3, "%lld\n", tam);
+        fclose(ptr3);
 
     } 
     else if (atoi(argv[1]) == 2) {
@@ -307,7 +310,6 @@ int main (int argc, char* argv[]) {
             if(!heap_empty(indice))
                 pthread_mutex_unlock(&mutex_v[heap_minimo[1]->id]);
 
-            printf("\n");
         }
         for (int i = 0; i < queueSize(); i++) {
             pthread_join(t_v[i], NULL);
@@ -320,6 +322,9 @@ int main (int argc, char* argv[]) {
 
         FILE* ptr3 = fopen("deadlines_2_10.txt", "a+");
             fprintf(ptr3, "%d\n", cumpre_deadline);
+        fclose(ptr3);
+        ptr3 = fopen("contexto_2_10.txt", "a+");
+            fprintf(ptr3, "%lld\n", contador_contexto);
         fclose(ptr3);
 
     } 
@@ -429,6 +434,9 @@ int main (int argc, char* argv[]) {
 
         FILE* ptr3 = fopen("deadlines_3_10.txt", "a+");
             fprintf(ptr3, "%d\n", cumpre_deadline);
+        fclose(ptr3);
+        ptr3 = fopen("contexto_3_10.txt", "a+");
+            fprintf(ptr3, "%lld\n", contador_contexto);
         fclose(ptr3);
 
     }
