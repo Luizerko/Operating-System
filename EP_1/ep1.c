@@ -8,8 +8,9 @@
 #include "time.h"
 
 long int tempo = 1;
-long int quantum = 3;
+long int quantum = 1;
 int flag_d = 0;
+int cumpre_deadline;
 
 pthread_t t1;
 
@@ -28,7 +29,6 @@ void* thread(void * arg) {
     }
     if(flag_d)
         fprintf(stderr, "Processo %s na CPU %d terminado\n", processo->nome, sched_getcpu());
-    printf("terminei o processo %s\n", processo->nome);
     pthread_exit(NULL);
 }
 
@@ -200,6 +200,8 @@ int main (int argc, char* argv[]) {
                 if(flag_d)
                     fprintf(stderr, "Finalizacao do processo: %s %ld %ld\n", processo1->nome, tempo, tempo - (long int)processo1->t0);
                 fprintf(ptr2, "%s %ld %ld\n", processo1->nome, tempo, tempo - (long int)processo1->t0);
+                if (processo1->deadline <= tempo)
+                    cumpre_deadline++;
                 flag_escreve = 0;
             }
             if(!queueEmpty() && processo1->dt == 0 && queueTop()->t0 <= tempo) {
@@ -223,6 +225,10 @@ int main (int argc, char* argv[]) {
         if(flag_d)
             fprintf(stderr, "Mudancas de contexto: %lld\n", tam);
         fprintf(ptr2, "%lld\n", tam);
+
+        FILE* ptr3 = fopen("deadlines_1_10.txt", "a+");
+            fprintf(ptr3, "%d\n", cumpre_deadline);
+        fclose(ptr3);
 
     } 
     else if (atoi(argv[1]) == 2) {
@@ -275,6 +281,8 @@ int main (int argc, char* argv[]) {
                 if(flag_d)
                     fprintf(stderr, "Finalizacao do processo: %s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
                 fprintf(ptr2, "%s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
+                if(aux->deadline <= tempo)
+                    cumpre_deadline++;
                 heap_remove(heap_minimo, indice);
                 indice--;
             }
@@ -309,6 +317,10 @@ int main (int argc, char* argv[]) {
             fprintf(stderr, "Mundancas de contexto: %lld\n", contador_contexto);
 
         fprintf(ptr2, "%lld\n", contador_contexto);
+
+        FILE* ptr3 = fopen("deadlines_2_10.txt", "a+");
+            fprintf(ptr3, "%d\n", cumpre_deadline);
+        fclose(ptr3);
 
     } 
     else {
@@ -373,6 +385,8 @@ int main (int argc, char* argv[]) {
                 if(flag_d)
                     fprintf(stderr, "Finalizacao do processo: %s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
                 fprintf(ptr2, "%s %ld %ld\n", aux->nome, tempo, tempo - (long int)aux->t0);
+                if(aux->deadline <= tempo)
+                    cumpre_deadline++;
                 lista_remove(&lista_first, &lista_last);
             }
 
@@ -413,10 +427,14 @@ int main (int argc, char* argv[]) {
 
         fprintf(ptr2, "%lld\n", contador_contexto);
 
+        FILE* ptr3 = fopen("deadlines_3_10.txt", "a+");
+            fprintf(ptr3, "%d\n", cumpre_deadline);
+        fclose(ptr3);
+
     }
 
     fclose(ptr);
     fclose(ptr2);
-    
+
     return 0;
 }

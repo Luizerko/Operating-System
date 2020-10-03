@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
         int dt = rand()%10 + 1;
         long int deadline = (long int)(rand()%10) + (long int)t0 + (long int)dt;    
         fprintf(ptr, "processo%d %d %d %ld\n", auxiliar_contagem-1, t0, dt, deadline);
-        i += rand()%5 + 1;
+        i += rand()%5;
     }
     fclose(ptr);
 
