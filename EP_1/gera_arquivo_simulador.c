@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[]) {
     srand(time(NULL));
-
+    sleep(1);
     FILE* ptr;
     ptr = fopen(argv[2], "w+");
     

@@ -213,7 +213,7 @@ int main (int argc, char* argv[]) {
 
         long long int tam = queueSize();
         int a;
-        int flag_escreve = 1; //flag que decide se o procagrama deve escrever no arquivo de resultado de simulação.
+        int flag_escreve = 1; //flag que decide se o programa deve escrever no arquivo de resultado de simulação.
         Processo *processo1;
 
         //Começa a executar o primeiro processo.
@@ -261,10 +261,10 @@ int main (int argc, char* argv[]) {
             fprintf(stderr, "Mudancas de contexto: %lld\n", tam);
         fprintf(ptr2, "%lld\n", tam);
 
-        FILE* ptr3 = fopen("deadlines_1_100.txt", "a+");
+        FILE* ptr3 = fopen("deadlines_1_10.txt", "a+");
             fprintf(ptr3, "%d\n", cumpre_deadline);
         fclose(ptr3);
-        ptr3 = fopen("contexto_1_100.txt", "a+");
+        ptr3 = fopen("contexto_1_10.txt", "a+");
             fprintf(ptr3, "%lld\n", tam);
         fclose(ptr3);
 
@@ -355,10 +355,10 @@ int main (int argc, char* argv[]) {
 
         fprintf(ptr2, "%lld\n", contador_contexto);
 
-        FILE* ptr3 = fopen("deadlines_2_100.txt", "a+");
+        FILE* ptr3 = fopen("deadlines_2_10.txt", "a+");
             fprintf(ptr3, "%d\n", cumpre_deadline);
         fclose(ptr3);
-        ptr3 = fopen("contexto_2_100.txt", "a+");
+        ptr3 = fopen("contexto_2_10.txt", "a+");
             fprintf(ptr3, "%lld\n", contador_contexto);
         fclose(ptr3);
 
@@ -468,10 +468,10 @@ int main (int argc, char* argv[]) {
 
         fprintf(ptr2, "%lld\n", contador_contexto);
 
-        FILE* ptr3 = fopen("deadlines_3_100.txt", "a+");
+        FILE* ptr3 = fopen("deadlines_3_10.txt", "a+");
             fprintf(ptr3, "%d\n", cumpre_deadline);
         fclose(ptr3);
-        ptr3 = fopen("contexto_3_100.txt", "a+");
+        ptr3 = fopen("contexto_3_10.txt", "a+");
             fprintf(ptr3, "%lld\n", contador_contexto);
         fclose(ptr3);
 
