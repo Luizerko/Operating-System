@@ -40,6 +40,7 @@ static void resize(long long int novo_tamanho) {
     }
 }
 
+//Inicialização da fila.
 void queueInit() {
     vetor = NULL;
     tam = 0;
@@ -48,7 +49,9 @@ void queueInit() {
     n = 0;
 }
 
+//Inserção do processo processo na fila.
 void queueInsert(Processo* processo) {
+    //Caso especial para a inserção do primeiro processo na fila.
     if(tam == 0) {
         vetor = malloc(sizeof(Processo*));
         tam = 1;
@@ -67,7 +70,7 @@ void queueInsert(Processo* processo) {
     }
 }
 
-//Remove o processo inicial da fila caso ela não esteja vazia, retornando-o. Caso a fila esteja vazia, retorna NULL. 
+//Remove o processo da frente da fila caso ela não esteja vazia, retornando-o. Caso a fila esteja vazia, retorna NULL. 
 //Caso o novo número de processos seja menor que o tamanho do vetor da fila dividido por 4, realoca o vetor para um 
 //de tamanho 2 vezes menor. 
 Processo* queueRemove() {
@@ -82,6 +85,7 @@ Processo* queueRemove() {
     return NULL;
 }
 
+//Retorna o processo que está na frente da fila.
 Processo* queueTop() {
     if(!queueEmpty()) {
         return vetor[ini];
@@ -97,16 +101,19 @@ Processo* queueItera(long int indice) {
     return NULL;
 }
 
+//Checa se a fila está vazia, retornando 1 caso esteja e 0 caso não esteja.
 bool queueEmpty() {
     if(n > 0)
         return 0;
     return 1;
 }
 
+//Retorna o número de elementos da fila.
 long long int queueSize() {
     return n;
 }
 
+//Libera o vetor da fila.
 void queueFree() {
     free(vetor);
 }

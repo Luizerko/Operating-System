@@ -16,7 +16,7 @@
 #define MAX_PALAVRAS 10
 #define MAX_TAMANHO_PALAVRA 20
 
-//Printa o usuário que executou o programa e o diretório atual no programa.
+//Printa o usuário que executou o programa e seu diretório atual.
 void printa_user_dir() {
     char* usuario = getenv("USER");
     char diretorio[1000];
@@ -27,7 +27,7 @@ void printa_user_dir() {
 
 //Recebe a string linha que tem palavras separadas por espaços e divide linha em varias strings, sendo cada uma delas 
 //uma dessas palavras. Aloca um vetor de vetores de char (equivalente a vetor de string) chamado parsed e atribui a 
-//ele as strings obtidas a partir de linha. Pro fim, retorna parsed.
+//ele as strings obtidas a partir de linha. Por fim, retorna parsed.
 char** parser(char* linha) {
     char** parsed = malloc(MAX_PALAVRAS*sizeof(char*));
     for(int i = 0; i < 10; i++) {
@@ -98,7 +98,7 @@ void execucao_comandos (char** comandos, char** parseiro) {
             waitpid(-1, NULL, 0);
         }     
     }
-    //Caso correspondente ao comando "mkdir <diretorio>" que cria um diretório com nome igual a parserio[1] e permissão 0777.
+    //Caso correspondente ao comando "mkdir <diretorio>" que cria um diretório com nome igual a parserio[1] e modo de permissão 0777.
     else if (pos == 3) {
         mkdir(parseiro[1], 0777);
     }
@@ -140,7 +140,6 @@ int main(int argc, char* argv[]) {
         add_history(linha);
         char** parseiro = parser(linha);
         execucao_comandos(comandos, parseiro);
-        //break;
     }
 
     return 0;
