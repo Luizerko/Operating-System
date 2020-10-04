@@ -6,7 +6,7 @@ int main(int argc, char* argv[]) {
     srand(time(NULL));
 
     FILE* ptr;
-    ptr = fopen("trace.txt", "w+");
+    ptr = fopen(argv[2], "w+");
     
     int limite = atoi(argv[1]);
     int i = 1;

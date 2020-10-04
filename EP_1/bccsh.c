@@ -16,7 +16,7 @@
 #define MAX_PALAVRAS 10
 #define MAX_TAMANHO_PALAVRA 20
 
-
+//Printa o usuário que executou o programa e o diretório atual no programa.
 void printa_user_dir() {
     char* usuario = getenv("USER");
     char diretorio[1000];
@@ -25,6 +25,9 @@ void printa_user_dir() {
     printf("\n{%s@%s} ", usuario, diretorio);
 }
 
+//Recebe a string linha que tem palavras separadas por espaços e divide linha em varias strings, sendo cada uma delas 
+//uma dessas palavras. Aloca um vetor de vetores de char (equivalente a vetor de string) chamado parsed e atribui a 
+//ele as strings obtidas a partir de linha. Pro fim, retorna parsed.
 char** parser(char* linha) {
     char** parsed = malloc(MAX_PALAVRAS*sizeof(char*));
     for(int i = 0; i < 10; i++) {
@@ -44,15 +47,17 @@ char** parser(char* linha) {
     return parsed;
 }
 
+//Função responsável pela execução de todos os comandos aceitos pelo bccsh.
 void execucao_comandos (char** comandos, char** parseiro) {
     char* comando = parseiro[0];
     int pos;
+    //Seleciona qual dos comandos foi solicitado.
     for (pos = 0; pos < 6; pos++) {
         if (strcmp(comandos[pos], comando) == 0)
             break;
     }
+    //Caso correspondente ao comando "/usr/bin/du -hs .".
     if (pos == 0) {
-        //dando resultados errados mas no caminho certo.
         if(fork() == 0) {
             char* aux[] = {"/usr/bin/du", "-hs", ".", NULL};
             execve("/usr/bin/du", aux, NULL);
@@ -61,8 +66,8 @@ void execucao_comandos (char** comandos, char** parseiro) {
             printf("\nExecutando o comando du:\n");
             waitpid(-1, NULL, 0);
         }
-        //comandos[0] = "/usr/b"
     }
+    //Caso correspondente ao comando "usr/bin/traceroute www.google.com.br".
     else if (pos == 1) {
         if(fork() == 0) {
             char* aux[] = {"/usr/bin/traceroute", "www.google.com.br", NULL};
@@ -72,8 +77,9 @@ void execucao_comandos (char** comandos, char** parseiro) {
             printf("\nExecutando o comando traceroute:\n");
             waitpid(-1, NULL, 0);
         }
-        //comandos[1] = "/usr/bin/traceroute";
     }
+    //Caso correspondente ao comando "./ep1 x y z", sedo x um número de 1 a 3 correspondente a qual escalonador de 
+    //processos será usado, y o arquivo de trace usado como entrada para a simulação e z o arquivo de saída da simulação.
     else if (pos == 2) {
         if(fork() == 0) {
 
@@ -90,24 +96,20 @@ void execucao_comandos (char** comandos, char** parseiro) {
         else {
             printf("\nEntrando em EP1:\n");
             waitpid(-1, NULL, 0);
-        }
-            
-        //comandos[2] = "./ep1";        
+        }     
     }
+    //Caso correspondente ao comando "mkdir <diretorio>" que cria um diretório com nome igual a parserio[1] e permissão 0777.
     else if (pos == 3) {
-        //funcionando.
-        //comandos[3] = "mkdir";
         mkdir(parseiro[1], 0777);
     }
+    //Caso correspondente ao comando "kill -9 <PID>"" que termina o processo de PID parseiro[2]."
     else if (pos == 4) {
-        //funcionando.
         kill(atoi(parseiro[2]), abs(atoi(parseiro[1])));
-        //comandos[4] = "kill";
     }
+    //Caso corresponde ao comando "ln -s <arquivo> <link>" que cria um link simbólico com nome igual a parseiro[3] de 
+    //um arquivo com nome igual a parseiro[2].
     else if (pos == 5) {
-        //funcionando.
         symlink(parseiro[2], parseiro[3]);
-        //comandos[5] = "ln";
     }
     else {
         
@@ -131,6 +133,7 @@ int main(int argc, char* argv[]) {
 
     printf("---------- Seja Bem Vindo Ao BCCSH ----------\n");
 
+    //Loop principal do shell que realiza todos os seus comandos.
     while(1) {
         printa_user_dir();
         char* linha = readline("");
