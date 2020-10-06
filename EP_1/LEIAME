@@ -1,0 +1,11 @@
+Como compilar os códigos: make
+
+Como executar o bccsh: ./bccsh
+
+Como executar o ep1: ./ep1 #escalonador <arquivo de trace> <arquivo de saida> <parametro opcional d> 
+
+Exemplo:
+
+1. make (Compila)
+2. ./bccsh (Abre o bcc shell)
+3. ./ep1 1 trace.txt simulacao.txt d (Executa o ep1 de dentro do bcc shell utilizando o escalonador FCFS, lendo a simulação do arquivo trace.txt, colocando o resultado da simulação no arquivo simulacao.txt e chamando o parâmetro opcional d)

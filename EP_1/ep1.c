@@ -26,6 +26,9 @@ void* thread(void * arg) {
         fprintf(stderr, "Processo %s usando CPU: %d\n", processo->nome, sched_getcpu());
     while(processo->dt > 0) {
         processo->dt--;
+        for(long long int i = 0; i < 100000000; i++) {
+            i++;
+        }
         tempo++;
         sleep(1);
     }
@@ -112,6 +115,9 @@ void* thread2(void * arg) {
         if(flag_d)
             fprintf(stderr, "Processo %s usando CPU: %d\n", processo->nome, sched_getcpu());
         processo->dt--;
+        for(long long int i = 0; i < 100000000; i++) {
+            i++;
+        }
         tempo++;
         sleep(1);
         if(processo->dt == 0 && flag_d)
@@ -183,6 +189,9 @@ void* thread3(void * arg) {
         if(flag_d)
             fprintf(stderr, "Processo %s usando CPU: %d\n", no->processo->nome, sched_getcpu());
         no->processo->dt--;
+        for(long long int i = 0; i < 100000000; i++) {
+            i++;
+        }
         tempo++;
         no->contador += 1;
         sleep(1);
