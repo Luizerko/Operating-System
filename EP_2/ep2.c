@@ -5,53 +5,125 @@
 #include <pthread.h>
 
 long int** velodromo;
-pthread_t* ciclistas;
+long int* velocidades;
+pthread_t* thread_ciclistas;
+Ciclista* ciclistas;
 
-int* iteracao;
+long int d, n;
+long int tamanho;
+int* arrive;
 int continua;
 
-int volta = 1;
+long int noventa_por_hora = -1;
+int flag_noventa;
+
 
 typedef struct coordenada {
     long int x;
     long int y;
 } Coordenada;
 
-void* ciclista(void* arg) {
+typedef struct ciclista {
+    long int identificador;
+    /*
+    posição muda quando um ciclista é removido da corrida, trocando a posição do último corredor do vetor para a posiição do primeiro.
+    Isso acontece para que quando se remove a raiz ou algum nó interno a árvore continue formada e funcionando.
+    */
+    long int posicao_arvore;
+    long int tipoNo;
+    long int volta;
+    long int velocidade;
+    Coordenada coordenada;
+} Ciclista;
+
+void* thread_ciclista(void* arg) {
     int round = 0;//interaçao e continua globais.
-    long int *dados = (long int*)arg;
+    Ciclista* biker = (Ciclista*)arg;
+
+    /*long int *dados = (long int*)arg;
     long int identificador = dados[0];
-    long int posicao = identificador;
+    long int posicao = identificador; //posição muda quando um ciclista é removido da corrida, trocando a posição do último corredor do vetor para a posiição do primeiro.
+    //Isso acontece para que quando se remove a raiz ou algum nó interno a árvore continue formada e funcionando.
     long int d = dados[1]; 
     long int tamanho = dados[2];
     long int tipoNo;
-    long int velocirapdo = 30;
+    long int volta = 0;
     Coordenada coordenada;
     coordenada.x = dados[3];
-    coordenada.y = dados[4];
+    coordenada.y = dados[4];*/
 
     while(1) {
 
-        if(posicao == 0)
-            tipoNo = 0;//Raiz.
-        else if(2*posicao < tamanho)
-            tipoNo = 1;//Interno.
+        if(biker->posicao_arvore == 0)
+            biker->tipoNo = 0;//Raiz.
+        else if(2*biker->posicao_arvore < tamanho)
+            biker->tipoNo = 1;//Interno.
         else
-            tipoNo = 2;//Folha
+            biker->tipoNo = 2;//Folha
 
-        if (tipoNo == 2) { //Folha
-            iteracao[posicao] = 1;
+        if (biker->tipoNo == 2) { //Folha
 
-            //instrução
-            if(velocirapdo == 30) {
-                coordenada.x-=1;
+            if(biker->volta < 2) {//Velocidade é 30km/h.
+                if(biker->coordenada.x - 1 <= 0)
+                    biker->volta++;
+                biker->coordenada.x = (biker->coordenada.x - 1)%d;
             }
-            else if(velocirapdo == 60) {
-                coordenada.x-=2;
+
+            else if(biker->volta < n - 2) {
+                
+                if(biker->velocidade == 30) {
+                    if(biker->coordenada.x - 1 <= 0) {
+                        biker->volta++;
+                        if(rand()%10 < 8)
+                            biker->velocidade = 60;
+                    }
+                    biker->coordenada.x = (biker->coordenada.x - 1)%d;
+                }
+                else if(biker->velocidade == 60) {
+                    if(biker->coordenada.x - 2 <= 0) {
+                        biker->volta++;
+                        if(rand()%10 < 4)
+                            biker->velocidade = 30;
+                    }
+                    biker->coordenada.x = (biker->coordenada.x - 2)%d;
+                }
             }
-            else {
-                coordenada.x-=3;
+
+            else { //Duas últimas voltas
+                if(flag_noventa != 1) {
+                    if(rand()%10 == 0)
+                        noventa_por_hora = rand()%(tamanho);                
+                    flag_noventa = 1;
+                }
+                
+                if(biker->posicao_arvore == noventa_por_hora)
+                    biker->velocidade = 90;
+                    
+                if(biker->velocidade == 30) {
+                    if(biker->coordenada.x - 1 <= 0) {
+                        biker->volta++;
+                        if(rand()%10 < 8)
+                            biker->velocidade = 60;
+                    }
+                    biker->coordenada.x = (biker->coordenada.x - 1)%d;
+                }
+                else if(biker->velocidade == 60) {
+                    if(biker->coordenada.x - 2 <= 0) {
+                        biker->volta++;
+                        if(rand()%10 < 4)
+                            biker->velocidade = 30;
+                    }
+                    biker->coordenada.x = (biker->coordenada.x - 2)%d;
+                }
+                else {
+                    if(biker->coordenada.x - 3 <= 0)
+                        biker->volta++;
+                    biker->coordenada.x = (biker->coordenada.x - 3)%d;
+                }
+
             }
+
+            arrive[biker->posicao_arvore] = 1;
             
             if (round == 0) {
                 while (continua == 0) {
@@ -67,24 +139,33 @@ void* ciclista(void* arg) {
             }
         }
 
-        else if (tipoNo == 1) { //Interno
-            if(2*posicao < tamanho && iteracao[2*posicao] != -1) {
-                while(iteracao[2*posicao] == 0) {
+        else if (biker->tipoNo == 1) { //Interno
+            if(2*biker->posicao_arvore < tamanho && arrive[2*biker->posicao_arvore] != -1) {
+                while(arrive[2*biker->posicao_arvore] == 0) {
                     usleep(d*40*(1000-1));
                 }
-                iteracao[2*posicao] = 0;
+                arrive[2*biker->posicao_arvore] = 0;
             }
 
-            if(2*posicao + 1 < tamanho && iteracao[2*posicao + 1] != -1) {
-                while(iteracao[2*posicao + 1] == 0) {
+            if(2*biker->posicao_arvore + 1 < tamanho && arrive[2*biker->posicao_arvore + 1] != -1) {
+                while(arrive[2*biker->posicao_arvore + 1] == 0) {
                     usleep(d*40*(1000-1));
                 }
-                iteracao[2*posicao + 1] = 0;
+                arrive[2*biker->posicao_arvore + 1] = 0;
             }
 
-            iteracao[posicao] = 1;
+            arrive[biker->posicao_arvore] = 1;
 
             //instrução.
+            if(biker->velocidade == 30) {
+                biker->coordenada.x-=1;
+            }
+            else if(biker->velocidade == 60) {
+                biker->coordenada.x-=2;
+            }
+            else {
+                biker->coordenada.x-=3;
+            }
             
             if (round == 0) {
                 while (continua == 0) {
@@ -101,21 +182,30 @@ void* ciclista(void* arg) {
         }
 
         else { //Raiz
-            if(2*posicao < tamanho && iteracao[2*posicao] != -1) {
-                while(iteracao[2*posicao] == 0) {
+            if(2*biker->posicao_arvore < tamanho && arrive[2*biker->posicao_arvore] != -1) {
+                while(arrive[2*biker->posicao_arvore] == 0) {
                     usleep(d*40*(1000-1));
                 }
-                iteracao[2*posicao] = 0;
+                arrive[2*biker->posicao_arvore] = 0;
             }
 
-            if(2*posicao + 1 < tamanho && iteracao[2*posicao + 1] != -1) {
-                while(iteracao[2*posicao + 1] == 0) {
+            if(2*biker->posicao_arvore + 1 < tamanho && arrive[2*biker->posicao_arvore + 1] != -1) {
+                while(arrive[2*biker->posicao_arvore + 1] == 0) {
                     usleep(d*40*(1000-1));
                 }
-                iteracao[2*posicao + 1] = 0;
+                arrive[2*biker->posicao_arvore + 1] = 0;
             }
 
             //instrucao.
+            if(biker->velocidade == 30) {
+                biker->coordenada.x-=1;
+            }
+            else if(biker->velocidade == 60) {
+                biker->coordenada.x-=2;
+            }
+            else {
+                biker->coordenada.x-=3;
+            }
             
             if(round == 0) {
                 continua = 1;
@@ -131,11 +221,12 @@ void* ciclista(void* arg) {
 
 int main (int argc, char* argv[]) {
 
-    long int d, n;
     d = (long int)atoi(argv[1]);
     n = (long int)atoi(argv[2]);
+    tamanho = n;
 
-    ciclistas = malloc(n*sizeof(pthread_t));
+    ciclistas = malloc(n*sizeof(Ciclista));
+    thread_ciclistas = malloc(n*sizeof(pthread_t));
     velodromo = malloc(2*d*sizeof(long int*));
     for(long int i = 0; i < d; i++) {
         velodromo[i] = malloc(10*sizeof(long int));
@@ -143,11 +234,16 @@ int main (int argc, char* argv[]) {
             velodromo[i][j] = -1;    
         }
     }
-
-    continua = 0;
-    iteracao = malloc(n*sizeof(int));
+    //velocidades = malloc(n*sizeof(long int));
     for(long int i = 0; i < n; i++) {
-        iteracao[i] = 0;
+        ciclistas[i].velocidade = 30;
+        ciclistas[i].volta = 0;
+        ciclistas[i].identificador = i;
+    }
+    continua = 0;
+    arrive = malloc(n*sizeof(int));
+    for(long int i = 0; i < n; i++) {
+        arrive[i] = 0;
     }
 
     long int tam = n;
@@ -175,11 +271,9 @@ int main (int argc, char* argv[]) {
     for(long int i = 0; i < aux && tam > 0; i+=2) {
         for(long int j = 0; j < 5 && tam > 0; j++) {
             long int aux_2 = rand()%tam;
-            dados[sorteados[aux_2]][0] = sorteados[aux_2];
-            dados[sorteados[aux_2]][1] = d;
-            dados[sorteados[aux_2]][2] = n;
-            dados[sorteados[aux_2]][3] = i + 1;
-            dados[sorteados[aux_2]][4] = j;
+            ciclistas[sorteados[aux_2]].posicao_arvore = sorteados[aux_2];
+            ciclistas[sorteados[aux_2]].coordenada.x = i + 1;
+            ciclistas[sorteados[aux_2]].coordenada.y = j;
             velodromo[i][j] = sorteados[aux_2];
             velodromo[i+1][j] = sorteados[aux_2];
             sorteados[aux_2] = sorteados[tam-1];
@@ -188,7 +282,7 @@ int main (int argc, char* argv[]) {
     }
 
     for(long int i = 0; i < n; i++) {
-        //pthread_create(&ciclistas[i], NULL, ciclista, &dados[i]);
+        //pthread_create(&thread_ciclistas[i], NULL, thread_ciclista, &ciclistas[i]);
         
     }
 
