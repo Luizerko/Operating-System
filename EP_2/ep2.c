@@ -4,20 +4,6 @@
 #include <time.h>
 #include <pthread.h>
 
-long int** velodromo;
-long int* velocidades;
-pthread_t* thread_ciclistas;
-Ciclista* ciclistas;
-
-long int d, n;
-long int tamanho;
-int* arrive;
-int continua;
-
-long int noventa_por_hora = -1;
-int flag_noventa;
-
-
 typedef struct coordenada {
     long int x;
     long int y;
@@ -35,6 +21,35 @@ typedef struct ciclista {
     long int velocidade;
     Coordenada coordenada;
 } Ciclista;
+
+_Atomic long int** velodromo;
+long int* velocidades;
+pthread_t* thread_ciclistas;
+Ciclista* ciclistas;
+
+long int d, n;
+long int tamanho;
+int* arrive;
+int continua;
+
+long int noventa_por_hora = -1;
+int flag_noventa;
+
+//Um ciclista está do meu lado esquerdo
+int lado(Ciclista* biker, int aux_y) {
+    if(velodromo[biker->coordenada.x][aux_y] != -1 && ((velodromo[biker->coordenada.x][aux_y] == velodromo[(biker->coordenada.x+1)%d][aux_y]) ||
+        (velodromo[biker->coordenada.x][aux_y] != velodromo[(biker->coordenada.x+1)%d][aux_y] && velodromo[(biker->coordenada.x+1)%d][aux_y] != -1)) )
+        return 1;
+    return 0;
+}
+
+//Um ciclista está do meu lado esquerdo com a cabeça no meu cu
+int lado_mais_um(Ciclista* biker, int aux_y) {
+    if(velodromo[(biker->coordenada.x+1)%d][aux_y] != -1 && ((velodromo[(biker->coordenada.x+1)%d][aux_y] == velodromo[(biker->coordenada.x+2)%d][aux_y]) ||
+        (velodromo[(biker->coordenada.x+1)%d][aux_y] != velodromo[(biker->coordenada.x+2)%d][aux_y] && velodromo[(biker->coordenada.x+2)%d][aux_y] != -1)) )
+        return 1;
+    return 0;
+}
 
 void* thread_ciclista(void* arg) {
     int round = 0;//interaçao e continua globais.
@@ -54,6 +69,8 @@ void* thread_ciclista(void* arg) {
 
     while(1) {
 
+        int flag_volta = 0;
+
         if(biker->posicao_arvore == 0)
             biker->tipoNo = 0;//Raiz.
         else if(2*biker->posicao_arvore < tamanho)
@@ -63,30 +80,98 @@ void* thread_ciclista(void* arg) {
 
         if (biker->tipoNo == 2) { //Folha
 
+            Coordenada coord_anterior;
+            coord_anterior.x = biker->coordenada.x;
+            coord_anterior.y = biker->coordenada.y;
+
             if(biker->volta < 2) {//Velocidade é 30km/h.
                 if(biker->coordenada.x - 1 <= 0)
                     biker->volta++;
                 biker->coordenada.x = (biker->coordenada.x - 1)%d;
+                velodromo[coord_anterior.x][coord_anterior.y] = -1;
+                if(velodromo[(coord_anterior.x+1)%d][coord_anterior.y] == biker->identificador)
+                    velodromo[(coord_anterior.x+1)%d][coord_anterior.y] = -1;
+                velodromo[biker->coordenada.x][biker->coordenada.y] = biker->identificador;
+                velodromo[(biker->coordenada.x+1)%d][biker->coordenada.y] = biker->identificador;
+                
+                arrive[biker->posicao_arvore] = 1;
             }
 
             else if(biker->volta < n - 2) {
                 
                 if(biker->velocidade == 30) {
-                    if(biker->coordenada.x - 1 <= 0) {
-                        biker->volta++;
-                        if(rand()%10 < 8)
-                            biker->velocidade = 60;
-                    }
+
                     biker->coordenada.x = (biker->coordenada.x - 1)%d;
+                    int aux_y = 0;
+                    
+                    while(aux_y < biker->coordenada.y && ((lado_esq(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                          (lado_mais_um_esq(biker, aux_y)) ||
+                          (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]) ||
+                          (velodromo[biker->coordenada.x+1][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x+1][aux_y]].posicao_arvore]))) {
+                        aux_y++;
+                    }
+                    
+                    biker->coordenada.y = aux_y;
                 }
                 else if(biker->velocidade == 60) {
-                    if(biker->coordenada.x - 2 <= 0) {
-                        biker->volta++;
+                    int aux_y = biker->coordenada.y;
+                    
+                    if((velodromo[(biker->coordenada.x-1)%d][aux_y] == -1 || (ciclistas[velodromo[(biker->coordenada.x-1)%d][aux_y]].velocidade == 60 && !arrive[ciclistas[velodromo[(biker->coordenada.x-1)%d][aux_y]].posicao_arvore])) && 
+                       (velodromo[(biker->coordenada.x-2)%d][aux_y] == -1 || !arrive[ciclistas[velodromo[(biker->coordenada.x-2)%d][aux_y]].posicao_arvore])) {
+
+                        biker->coordenada.x = (biker->coordenada.x - 2)%d;
+                        
+                        aux_y = 0;
+                        while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                             (lado_mais_um(biker, aux_y)) ||
+                             (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]) ||
+                             (velodromo[biker->coordenada.x+1][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x+1][aux_y]].posicao_arvore]))) {
+                            aux_y++;
+                        }
+                        
+                        biker->coordenada.y = aux_y;
+                    }
+                    else {
+                        while(aux_y < 10 && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                             (lado_mais_um(biker, aux_y)) ||
+                             (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]) ||
+                             (velodromo[biker->coordenada.x+1][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x+1][aux_y]].posicao_arvore]))) {
+                            aux_y++;
+                        }
+                        if(aux_y == 10) {//Anda a 30 km/h nessa iteração.
+                            biker->coordenada.x = (biker->coordenada.x - 1)%d;
+                            
+                            aux_y = 0;
+                            while(aux_y < biker->coordenada.y && ((lado_esq(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                                (lado_mais_um_esq(biker, aux_y)) ||
+                                (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]) ||
+                                (velodromo[biker->coordenada.x+1][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x+1][aux_y]].posicao_arvore]))) {
+                                aux_y++;
+                            }
+                        }
+
+                        biker->coordenada.y = aux_y;
+                    }
+                }
+
+                if(velodromo[coord_anterior.x][coord_anterior.y] == biker->identificador)
+                    velodromo[coord_anterior.x][coord_anterior.y] = -1;
+                if(velodromo[(coord_anterior.x+1)%d][coord_anterior.y] == biker->identificador)
+                    velodromo[(coord_anterior.x+1)%d][coord_anterior.y] = -1;
+                velodromo[biker->coordenada.x][biker->coordenada.y] = biker->identificador;
+                velodromo[(biker->coordenada.x+1)%d][biker->coordenada.y] = biker->identificador;
+                
+                if(coord_anterior.x < biker->coordenada.x) {
+                    biker->volta++;
+                    if(biker->velocidade == 30)
+                        if(rand()%10 < 8)
+                            biker->velocidade = 60;
+                    else
                         if(rand()%10 < 4)
                             biker->velocidade = 30;
-                    }
-                    biker->coordenada.x = (biker->coordenada.x - 2)%d;
                 }
+
+                arrive[biker->posicao_arvore] = 1;
             }
 
             else { //Duas últimas voltas
@@ -155,6 +240,8 @@ void* thread_ciclista(void* arg) {
             }
 
             arrive[biker->posicao_arvore] = 1;
+
+
 
             //instrução.
             if(biker->velocidade == 30) {
