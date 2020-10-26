@@ -23,6 +23,7 @@ typedef struct ciclista {
 } Ciclista;
 
 _Atomic long int** velodromo;
+pthread_mutex_t mutex;
 long int* velocidades;
 pthread_t* thread_ciclistas;
 Ciclista* ciclistas;
@@ -66,7 +67,6 @@ void instrucao(Ciclista* biker) {
         if(biker->coordenada.x - 1 <= 0)
             biker->volta++;
         biker->coordenada.x = mod(biker->coordenada.x-1, d);
-        printf("Eu, %ld, tenho coordenada: %ld\n", biker->identificador, biker->coordenada.x);
 
         if(velodromo[coord_anterior.x][coord_anterior.y] == biker->identificador)
             velodromo[coord_anterior.x][coord_anterior.y] = -1;
@@ -82,7 +82,7 @@ void instrucao(Ciclista* biker) {
         printf("Eu, %ld, passei pela volta %ld\n", biker->identificador, biker->volta);
     }
 
-    else if(biker->volta < n ) {
+    else if(biker->volta < n) {
         
         if(biker->velocidade == 30) {
 
@@ -91,8 +91,7 @@ void instrucao(Ciclista* biker) {
             
             while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
                     (lado_mais_um(biker, aux_y)) ||
-                    (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]) ||
-                    (velodromo[mod(biker->coordenada.x+1, d)][aux_y] != -1 && arrive[ciclistas[velodromo[mod(biker->coordenada.x+1, d)][aux_y]].posicao_arvore]))) {
+                    (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
                 aux_y++;
             }
             
@@ -103,24 +102,23 @@ void instrucao(Ciclista* biker) {
             
             if((velodromo[mod(biker->coordenada.x-1, d)][aux_y] == -1 || (ciclistas[velodromo[mod(biker->coordenada.x-1, d)][aux_y]].velocidade == 60 && !arrive[ciclistas[velodromo[mod(biker->coordenada.x-1, d)][aux_y]].posicao_arvore])) && 
                 (velodromo[mod(biker->coordenada.x-2, d)][aux_y] == -1 || !arrive[ciclistas[velodromo[mod(biker->coordenada.x-2, d)][aux_y]].posicao_arvore])) {
-
+                
                 biker->coordenada.x = mod(biker->coordenada.x-2, d);
                 
                 aux_y = 0;
                 while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
                         (lado_mais_um(biker, aux_y)) ||
-                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]) ||
-                        (velodromo[mod(biker->coordenada.x+1, d)][aux_y] != -1 && arrive[ciclistas[velodromo[mod(biker->coordenada.x+1, d)][aux_y]].posicao_arvore]))) {
+                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
                     aux_y++;
                 }
-                
                 biker->coordenada.y = aux_y;
+
             }
             else {
+                aux_y++;
                 while(aux_y < 10 && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
                         (lado_mais_um(biker, aux_y)) ||
-                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]) ||
-                        (velodromo[mod(biker->coordenada.x+1, d)][aux_y] != -1 && arrive[ciclistas[velodromo[mod(biker->coordenada.x+1, d)][aux_y]].posicao_arvore]))) {
+                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
                     aux_y++;
                 }
                 if(aux_y == 10) {//Anda a 30 km/h nessa iteração.
@@ -129,13 +127,18 @@ void instrucao(Ciclista* biker) {
                     aux_y = 0;
                     while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
                         (lado_mais_um(biker, aux_y)) ||
-                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]) ||
-                        (velodromo[mod(biker->coordenada.x+1, d)][aux_y] != -1 && arrive[ciclistas[velodromo[mod(biker->coordenada.x+1, d)][aux_y]].posicao_arvore]))) {
+                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
                         aux_y++;
                     }
                 }
 
+                else {
+                    aux_y++;
+                    biker->coordenada.x = mod(biker->coordenada.x-2, d);
+                }
+
                 biker->coordenada.y = aux_y;
+
             }
         }
 
@@ -213,55 +216,75 @@ void* thread_ciclista(void* arg) {
 
         if (biker->tipoNo == 3) { //Folha
 
-            //printf("ENTREI FOLHA! %ld\n", biker->identificador);
-
+            pthread_mutex_lock(&mutex);
             instrucao(biker);
-            //arrive[biker->posicao_arvore] = 1;
+
+            /*
+            printf("\n----------INICIEI VELÓDROMO %ld----------\n", biker->identificador);
+            for(int i = 0; i < d; i++) {
+                for(int j = 0; j < 10; j++) {
+                    printf("%ld ", velodromo[i][j]);
+                }
+                printf("\n");
+            }
+            printf("\n----------FINALIZEI VELÓDROMO %ld----------\n", biker->identificador);
+            */
+
+            pthread_mutex_unlock(&mutex);
             
             if (round == 0) {
                 while (continua == 0) {
-                    usleep(d*40*(1000-1));//??
+                    usleep(d*40*(5-1));//??
                 }
                 round = 1;
             }
             else {
                 while (continua == 1) {
-                    usleep(d*40*(1000-1));//??
+                    usleep(d*40*(5-1));//??
                 }
                 round = 0;                
             }
         }
 
         else if (biker->tipoNo == 2) { //Interno
-
-            //printf("ENTREI INTERNO! %ld\n", biker->identificador);
             
             if(2*biker->posicao_arvore < tamanho && arrive[2*biker->posicao_arvore] != -1) {
                 while(arrive[2*biker->posicao_arvore] == 0) {
-                    usleep(d*40*(1000-1));
+                    usleep(d*40*(5-1));
                 }
-                arrive[2*biker->posicao_arvore] = 0;
             }
 
             if(2*biker->posicao_arvore + 1 < tamanho && arrive[2*biker->posicao_arvore + 1] != -1) {
                 while(arrive[2*biker->posicao_arvore + 1] == 0) {
-                    usleep(d*40*(1000-1));
+                    usleep(d*40*(5-1));
                 }
-                arrive[2*biker->posicao_arvore + 1] = 0;
             }
 
+            pthread_mutex_lock(&mutex);
             instrucao(biker);
-            //arrive[biker->posicao_arvore] = 1;
+
+            /*
+            printf("\n----------INICIEI VELÓDROMO %ld----------\n", biker->identificador);
+            for(int i = 0; i < d; i++) {
+                for(int j = 0; j < 10; j++) {
+                    printf("%ld ", velodromo[i][j]);
+                }
+                printf("\n");
+            }
+            printf("\n----------FINALIZEI VELÓDROMO %ld----------\n", biker->identificador);
+            */
+
+            pthread_mutex_unlock(&mutex);
 
             if (round == 0) {
                 while (continua == 0) {
-                    usleep(d*40*(1000-1));//??
+                    usleep(d*40*(5-1));//??
                 }
                 round = 1;
             }
             else {
                 while (continua == 1) {
-                    usleep(d*40*(1000-1));//??
+                    usleep(d*40*(5-1));//??
                 }
                 round = 0;                
             }
@@ -269,34 +292,36 @@ void* thread_ciclista(void* arg) {
 
         else { //Raiz
 
-            //printf("ENTREI RAIZ! %ld\n", biker->identificador);
-
             if(2*biker->posicao_arvore < tamanho && arrive[2*biker->posicao_arvore] != -1) {
                 while(arrive[2*biker->posicao_arvore] == 0) {
-                    usleep(d*40*(1000-1));
+                    usleep(d*40*(5-1));
                 }
-                arrive[2*biker->posicao_arvore] = 0;
+                //arrive[2*biker->posicao_arvore] = 0;
             }
 
             if(2*biker->posicao_arvore + 1 < tamanho && arrive[2*biker->posicao_arvore + 1] != -1) {
                 while(arrive[2*biker->posicao_arvore + 1] == 0) {
-                    usleep(d*40*(1000-1));
+                    usleep(d*40*(5-1));
                 }
-                arrive[2*biker->posicao_arvore + 1] = 0;
+                //arrive[2*biker->posicao_arvore + 1] = 0;
             }
 
+            pthread_mutex_lock(&mutex);
             instrucao(biker);
-            //arrive[biker->posicao_arvore] = 1;
             
-            printf("\n----------INICIEI VELÓDROMO----------\n");
+            printf("\n----------INICIEI VELÓDROMO %ld----------\n", biker->identificador);
             for(int i = 0; i < d; i++) {
                 for(int j = 0; j < 10; j++) {
                     printf("%ld ", velodromo[i][j]);
                 }
                 printf("\n");
             }
-            printf("\n----------FINALIZEI VELÓDROMO----------\n");
-
+            printf("\n----------FINALIZEI VELÓDROMO %ld----------\n", biker->identificador);
+              
+            for (int i = 1; i <= n; i++) {
+                arrive[i] = 0;
+            }
+            pthread_mutex_unlock(&mutex);
             if(round == 0) {
                 continua = 1;
                 round = 1;
@@ -314,6 +339,8 @@ int main (int argc, char* argv[]) {
     d = (long int)atoi(argv[1]);
     n = (long int)atoi(argv[2]);
     tamanho = n;
+    pthread_mutex_init(&mutex, NULL);
+    srand(1);
 
     ciclistas = malloc((n+1)*sizeof(Ciclista));
     thread_ciclistas = malloc(n*sizeof(pthread_t));
