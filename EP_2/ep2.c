@@ -22,16 +22,29 @@ typedef struct ciclista {
     Coordenada coordenada;
 } Ciclista;
 
+typedef struct final_ciclista {
+    long int identificador;
+    long int rank;
+    long int tempo_eliminacao;
+    long int volta_quebra;
+} Final_Ciclista;
+
 _Atomic long int** velodromo;
 pthread_mutex_t mutex;
 long int* velocidades;
 pthread_t* thread_ciclistas;
 Ciclista* ciclistas;
+int* arrive;
 
 long int d, n;
+long int tempo = 0;
+int saida_completa = 0;
+long int* voltas_eliminacao;
+Final_Ciclista* vetor_final;
+long int aux_ini, aux_fim;
 long int tamanho;
-int* arrive;
 int continua;
+long int ultimo_arvore;
 
 long int noventa_por_hora = -1;
 int flag_noventa;
@@ -79,10 +92,9 @@ void instrucao(Ciclista* biker) {
         
         arrive[biker->posicao_arvore] = 1;
 
-        printf("Eu, %ld, passei pela volta %ld\n", biker->identificador, biker->volta);
     }
 
-    else if(biker->volta < n) {
+    else if(biker->volta < 2*n) {
         
         if(biker->velocidade == 30) {
 
@@ -144,13 +156,37 @@ void instrucao(Ciclista* biker) {
 
         if(velodromo[coord_anterior.x][coord_anterior.y] == biker->identificador)
             velodromo[coord_anterior.x][coord_anterior.y] = -1;
-        if(velodromo[(coord_anterior.x+1)%d][coord_anterior.y] == biker->identificador)
-            velodromo[(coord_anterior.x+1)%d][coord_anterior.y] = -1;
+        if(velodromo[mod(biker->coordenada.x+1, d)][coord_anterior.y] == biker->identificador)
+            velodromo[mod(coord_anterior.x+1, d)][coord_anterior.y] = -1;
         velodromo[biker->coordenada.x][biker->coordenada.y] = biker->identificador;
         velodromo[mod(biker->coordenada.x+1, d)][biker->coordenada.y] = biker->identificador;
         
         if(coord_anterior.x < biker->coordenada.x) {
             biker->volta++;
+            if(biker->volta%2 != 0) {
+                if(voltas_eliminacao[biker->volta] == tamanho - 1) {
+                    tamanho--;
+                    vetor_final[aux_fim].identificador = biker->identificador;
+                    aux_fim--;
+                    vetor_final[biker->identificador].tempo_eliminacao = tempo+20; //Elimina com uma passagem de tempo extra, já que considera a passagem de tempo da iteração atual em que atingiu a nova volta e foi eliminado.
+                    
+                    velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
+                    velodromo[mod(biker->coordenada.x+1, d)][biker->coordenada.y] = -1;
+
+                    arrive[biker->posicao_arvore] = arrive[ciclistas[ultimo_arvore].posicao_arvore];
+                    ciclistas[ultimo_arvore].posicao_arvore = biker->posicao_arvore;
+                    for(long int w = 1; w <= tamanho; w++) {
+                        if(ciclistas[w].posicao_arvore == tamanho)
+                            ultimo_arvore = w;
+                    }
+                    
+                    pthread_mutex_unlock(&mutex);
+                    pthread_exit(NULL);
+                    printf("Cheguei\n");
+                }
+                else
+                    voltas_eliminacao[biker->volta]++;
+            }
             if(biker->velocidade == 30) {
                 if(rand()%10 < 8)
                     biker->velocidade = 60;
@@ -207,6 +243,9 @@ void* thread_ciclista(void* arg) {
 
     while(1) {
 
+        if (tamanho == 1) {
+            vetor_final[aux_ini].identificador = biker->identificador;
+        }
         if(biker->posicao_arvore == 1)
             biker->tipoNo = 1;//Raiz.
         else if(2*biker->posicao_arvore < tamanho)
@@ -308,15 +347,18 @@ void* thread_ciclista(void* arg) {
 
             pthread_mutex_lock(&mutex);
             instrucao(biker);
+            tempo += 20;
             
-            printf("\n----------INICIEI VELÓDROMO %ld----------\n", biker->identificador);
-            for(int i = 0; i < d; i++) {
-                for(int j = 0; j < 10; j++) {
-                    printf("%ld ", velodromo[i][j]);
+            if(saida_completa) {
+                printf("\n----------INICIEI VELÓDROMO %ld----------\n", biker->identificador);
+                for(int i = 0; i < d; i++) {
+                    for(int j = 0; j < 10; j++) {
+                        printf("%ld ", velodromo[i][j]);
+                    }
+                    printf("\n");
                 }
-                printf("\n");
+                printf("\n----------FINALIZEI VELÓDROMO %ld----------\n", biker->identificador);
             }
-            printf("\n----------FINALIZEI VELÓDROMO %ld----------\n", biker->identificador);
               
             for (int i = 1; i <= n; i++) {
                 arrive[i] = 0;
@@ -338,18 +380,32 @@ int main (int argc, char* argv[]) {
 
     d = (long int)atoi(argv[1]);
     n = (long int)atoi(argv[2]);
+    if(argc > 3) {
+        saida_completa = 1;
+    }
     tamanho = n;
+    ultimo_arvore = n;
     pthread_mutex_init(&mutex, NULL);
     srand(1);
 
     ciclistas = malloc((n+1)*sizeof(Ciclista));
     thread_ciclistas = malloc(n*sizeof(pthread_t));
-    velodromo = malloc(2*d*sizeof(long int*));
+    velodromo = malloc(2*d*sizeof(long int*)); 
     for(long int i = 0; i < d; i++) {
         velodromo[i] = malloc(10*sizeof(long int));
         for(int j = 0; j < 10; j++) {
             velodromo[i][j] = -1;    
         }
+    }
+    voltas_eliminacao = malloc(2*n*sizeof(long int));
+    for(long int i = 0; i < 2*n; i++) {
+        voltas_eliminacao[i] = 0;
+    }
+    aux_fim = n-1;
+    aux_ini = 0;
+    vetor_final = malloc(n*sizeof(Final_Ciclista));
+    for (long int i = 0; i < n; i++) {
+        vetor_final[i].volta_quebra = -1;
     }
     //velocidades = malloc(n*sizeof(long int));
     for(long int i = 1; i <= n; i++) {
@@ -393,14 +449,16 @@ int main (int argc, char* argv[]) {
     }
 
     /* Printa velódromo
-    printf("\n----------INICIEI VELÓDROMO----------\n");
-    for(int i = 0; i < d; i++) {
-        for(int j = 0; j < 10; j++) {
-            printf("%ld ", velodromo[i][j]);
+    if(saida_completa) {
+        printf("\n----------INICIEI VELÓDROMO----------\n");
+        for(int i = 0; i < d; i++) {
+            for(int j = 0; j < 10; j++) {
+                printf("%ld ", velodromo[i][j]);
+            }
+            printf("\n");
         }
-        printf("\n");
+        printf("\n----------FINALIZEI VELÓDROMO----------\n");
     }
-    printf("\n----------FINALIZEI VELÓDROMO----------\n");
     */
 
     for(long int i = 0; i < n; i++) {
@@ -409,6 +467,17 @@ int main (int argc, char* argv[]) {
     
     for(long int i = 0; i < n; i++) {
         pthread_join(thread_ciclistas[i], NULL);
+    }
+
+    for(long int i = 0; i < n; i++) {
+        if(i < aux_ini) {
+            printf("Quebrei :(\n");
+        }
+        else {
+            printf("Sou o ciclista: %ld\n", vetor_final[i].identificador);
+            printf("Minha colocação: %ld\n", i-aux_ini+1);
+            printf("Meu instante de tempo: %ld\n", vetor_final[i].tempo_eliminacao);
+        }
     }
 
     free(sorteados);
