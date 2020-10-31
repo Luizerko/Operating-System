@@ -76,8 +76,8 @@ void instrucao(Ciclista* biker) {
     coord_anterior.x = biker->coordenada.x;
     coord_anterior.y = biker->coordenada.y;
 
-    if(biker->volta < 2) {//Velocidade é 30km/h.
-        if(biker->coordenada.x - 1 <= 0)
+    if(biker->volta < 1) {//Velocidade é 30km/h.
+        if(biker->coordenada.x - 1 < 0)
             biker->volta++;
         biker->coordenada.x = mod(biker->coordenada.x-1, 2*d);
 
@@ -92,7 +92,7 @@ void instrucao(Ciclista* biker) {
 
     }
 
-    else if(biker->volta < 2*n) {
+    else if(biker->volta < (2*n) - 2) {
         
         if(biker->velocidade == 30) {
 
@@ -151,8 +151,6 @@ void instrucao(Ciclista* biker) {
             }
         }
 
-        printf("chegueeeei %ld\n", biker->identificador);
-
         if(velodromo[coord_anterior.x][coord_anterior.y] == biker->identificador)
             velodromo[coord_anterior.x][coord_anterior.y] = -1;
         if(velodromo[mod(coord_anterior.x+1, 2*d)][coord_anterior.y] == biker->identificador)
@@ -162,7 +160,191 @@ void instrucao(Ciclista* biker) {
         
         if(coord_anterior.x < biker->coordenada.x) {
             biker->volta++;
-            printf("volta: %ld\n", biker->volta);
+            if(biker->volta%2 != 0) {
+                if(voltas_eliminacao[biker->volta] == tamanho - 1) {//Remoção deste ciclista da corrida.
+                    tamanho--;
+                    vetor_final[aux_fim].identificador = biker->identificador;
+                    //isso aqui q eu mudei, tava biker->identificador e troquei pra aux_fim
+                    vetor_final[aux_fim].tempo_eliminacao = tempo + 20; //Elimina com uma passagem de tempo extra, já que considera a passagem de tempo da iteração atual em que atingiu a nova volta e foi eliminado.
+                    aux_fim--;
+                    
+                    velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
+                    velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
+                    
+                    /*
+                    printf("meu id: %ld\n", biker->identificador);
+                    for(int j = 1; j <= tamanho+1; j++) {
+                        printf("id:%ld arrive:%d\n", ciclistas[j].identificador, arrive[j]);
+                    }
+                    */
+
+                    int flag_raiz = 0;
+                    if(biker->posicao_arvore == 1)//É a raiz.
+                        flag_raiz = 1; 
+
+                    arrive[biker->posicao_arvore] = arrive[ciclistas[ultimo_arvore].posicao_arvore];
+                    ciclistas[ultimo_arvore].posicao_arvore = biker->posicao_arvore;
+                    for(long int w = 1; w <= tamanho+1; w++) {
+                        if(ciclistas[w].posicao_arvore == tamanho) {
+                            ultimo_arvore = w;
+                            break;
+                        }
+                    }
+
+                    if(flag_raiz) {
+                        for(int j = 1; j <= tamanho+1; j++)
+                            arrive[j] = 0;
+                        continua = 1 - continua;
+                    }   
+                    pthread_mutex_unlock(&mutex);
+                    pthread_exit(NULL);
+                }
+                else
+                    voltas_eliminacao[biker->volta]++;
+            }
+
+            if (biker->volta%6 == 0 && tamanho > 5) {
+                if(rand()%100 < 5) {
+                    tamanho--;
+                    vetor_final[aux_ini].identificador = biker->identificador;
+                    vetor_final[aux_ini].volta_quebra = biker->volta; //Elimina com uma passagem de tempo extra, já que considera a passagem de tempo da iteração atual em que atingiu a nova volta e foi eliminado.
+                    aux_ini++;
+                    
+                    velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
+                    velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
+                    printf("O corredor %ld quebrou na volta %ld e foi eliminado!", biker->identificador, biker->volta);
+                    /*
+                    printf("meu id: %ld\n", biker->identificador);
+                    for(int j = 1; j <= tamanho+1; j++) {
+                        printf("id:%ld arrive:%d\n", ciclistas[j].identificador, arrive[j]);
+                    }
+                    */
+
+                    int flag_raiz = 0;
+                    if(biker->posicao_arvore == 1)//É a raiz.
+                        flag_raiz = 1; 
+
+                    arrive[biker->posicao_arvore] = arrive[ciclistas[ultimo_arvore].posicao_arvore];
+                    ciclistas[ultimo_arvore].posicao_arvore = biker->posicao_arvore;
+                    for(long int w = 1; w <= tamanho+1; w++) {
+                        if(ciclistas[w].posicao_arvore == tamanho) {
+                            ultimo_arvore = w;
+                            break;
+                        }
+                    }
+
+                    if(flag_raiz) {
+                        for(int j = 1; j <= tamanho+1; j++)
+                            arrive[j] = 0;
+                        continua = 1 - continua;
+                    }   
+                    pthread_mutex_unlock(&mutex);
+                    pthread_exit(NULL);
+                }
+            }
+            
+            if(biker->velocidade == 30) {
+                if(rand()%10 < 8)
+                    biker->velocidade = 60;
+            }
+            else {
+                if(rand()%10 < 4)
+                    biker->velocidade = 30;
+            }
+        }
+    }
+
+    else { //Duas últimas voltas
+        if(flag_noventa != 1) {
+            if(rand()%1 == 0)
+                noventa_por_hora = rand()%2;                
+            flag_noventa = 1;
+        }
+        
+        if(noventa_por_hora == 0)
+            biker->velocidade = 90;
+        noventa_por_hora = 1 - noventa_por_hora;
+        
+        if(biker->velocidade == 30) {
+
+            biker->coordenada.x = mod(biker->coordenada.x-1, 2*d);
+            int aux_y = 0;
+            
+            while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                    (lado_mais_um(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade != 90) ||
+                    (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
+                aux_y++;
+            }
+            
+            biker->coordenada.y = aux_y;
+        }
+        else if(biker->velocidade == 60) {
+            int aux_y = biker->coordenada.y;
+            
+            if((velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y] == -1 || (ciclistas[velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y]].velocidade != 30 && !arrive[ciclistas[velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y]].posicao_arvore])) && 
+                (velodromo[mod(biker->coordenada.x-2, 2*d)][aux_y] == -1 || !arrive[ciclistas[velodromo[mod(biker->coordenada.x-2, 2*d)][aux_y]].posicao_arvore])) {
+                
+                biker->coordenada.x = mod(biker->coordenada.x-2, 2*d);
+                
+                aux_y = 0;
+                while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                        (lado_mais_um(biker, aux_y)  && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade != 90) ||
+                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
+                    aux_y++;
+                }
+                biker->coordenada.y = aux_y;
+
+            }
+            else {
+                while(aux_y < 10 && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                        (lado_mais_um(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade != 90) ||
+                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
+                    aux_y++;
+                }
+                if(aux_y == 10) {//Anda a 30 km/h nessa iteração.
+                    biker->coordenada.x = mod((biker->coordenada.x - 1), 2*d);
+                    
+                    aux_y = 0;
+                    while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                        (lado_mais_um(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade != 90) ||
+                        (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
+                        aux_y++;
+                    }
+                }
+
+                else {
+                    aux_y++;
+                    biker->coordenada.x = mod(biker->coordenada.x-2, 2*d);
+                }
+
+                biker->coordenada.y = aux_y;
+
+            }
+        }
+
+        else {
+            int aux_y = biker->coordenada.y;
+                
+            biker->coordenada.x = mod(biker->coordenada.x-3, 2*d);
+            
+            aux_y = 0;
+            while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
+                    (lado_mais_um(biker, aux_y)) ||
+                    (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
+                aux_y++;
+            }
+            biker->coordenada.y = aux_y;
+        }
+
+        if(velodromo[coord_anterior.x][coord_anterior.y] == biker->identificador)
+            velodromo[coord_anterior.x][coord_anterior.y] = -1;
+        if(velodromo[mod(coord_anterior.x+1, 2*d)][coord_anterior.y] == biker->identificador)
+            velodromo[mod(coord_anterior.x+1, 2*d)][coord_anterior.y] = -1;
+        velodromo[biker->coordenada.x][biker->coordenada.y] = biker->identificador;
+        velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = biker->identificador;
+
+        if(coord_anterior.x < biker->coordenada.x) {
+            biker->volta++;
             if(biker->volta%2 != 0) {
                 if(voltas_eliminacao[biker->volta] == tamanho - 1) {//Remoção deste ciclista da corrida.
                     tamanho--;
@@ -174,10 +356,12 @@ void instrucao(Ciclista* biker) {
                     velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
                     velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
                     
+                    /*
                     printf("meu id: %ld\n", biker->identificador);
                     for(int j = 1; j <= tamanho+1; j++) {
                         printf("id:%ld arrive:%d\n", ciclistas[j].identificador, arrive[j]);
                     }
+                    */
 
                     int flag_raiz = 0;
                     if(biker->posicao_arvore == 1)//É a raiz.
@@ -212,41 +396,8 @@ void instrucao(Ciclista* biker) {
                     biker->velocidade = 30;
             }
         }
+
     }
-
-    /*else { //Duas últimas voltas
-        if(flag_noventa != 1) {
-            if(rand()%10 == 0)
-                noventa_por_hora = rand()%(tamanho);                
-            flag_noventa = 1;
-        }
-        
-        if(biker->posicao_arvore == noventa_por_hora)
-            biker->velocidade = 90;
-            
-        if(biker->velocidade == 30) {
-            if(biker->coordenada.x - 1 <= 0) {
-                biker->volta++;
-                if(rand()%10 < 8)
-                    biker->velocidade = 60;
-            }
-            biker->coordenada.x = (biker->coordenada.x - 1)%d;
-        }
-        else if(biker->velocidade == 60) {
-            if(biker->coordenada.x - 2 <= 0) {
-                biker->volta++;
-                if(rand()%10 < 4)
-                    biker->velocidade = 30;
-            }
-            biker->coordenada.x = (biker->coordenada.x - 2)%d;
-        }
-        else {
-            if(biker->coordenada.x - 3 <= 0)
-                biker->volta++;
-            biker->coordenada.x = (biker->coordenada.x - 3)%d;
-        }
-
-    }*/
 
     arrive[biker->posicao_arvore] = 1;
 }
@@ -256,6 +407,8 @@ void* thread_ciclista(void* arg) {
     Ciclista* biker = (Ciclista*)arg;
 
     while(1) {
+
+        printf(" menino %ld e tô na volta: %ld\n", biker->identificador, biker->volta);
 
         if (tamanho == 1) {
             vetor_final[aux_ini].identificador = biker->identificador;
@@ -365,14 +518,14 @@ void* thread_ciclista(void* arg) {
             tempo += 20;
             
             if(saida_completa) {
-                printf("\n----------INICIEI VELÓDROMO %ld----------\n", biker->identificador);
+                printf("\n---------- INICIEI VELÓDROMO ----------\n");
                 for(int i = 0; i < 2*d; i++) {
                     for(int j = 0; j < 10; j++) {
                         printf("%ld ", velodromo[i][j]);
                     }
                     printf("\n");
                 }
-                printf("\n----------FINALIZEI VELÓDROMO %ld----------\n", biker->identificador);
+                printf("\n---------- FINALIZEI VELÓDROMO ----------\n");
             }
               
             for (int i = 1; i <= n; i++) {
@@ -486,12 +639,17 @@ int main (int argc, char* argv[]) {
 
     for(long int i = 0; i < n; i++) {
         if(i < aux_ini) {
-            printf("Quebrei :(\n");
+            printf("\n");
+            printf("Sou o ciclista: %ld\n", vetor_final[i].identificador);
+            printf("Quebrei na volta %ld :(\n", vetor_final[i].volta_quebra);
+            printf("\n");
         }
         else {
+            printf("\n");
             printf("Sou o ciclista: %ld\n", vetor_final[i].identificador);
             printf("Minha colocação: %ld\n", i-aux_ini+1);
             printf("Meu instante de tempo: %ld\n", vetor_final[i].tempo_eliminacao);
+            printf("\n");
         }
     }
 
