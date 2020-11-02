@@ -164,27 +164,20 @@ void instrucao(Ciclista* biker) {
                 if(voltas_eliminacao[biker->volta] == tamanho - 1) {//Remoção deste ciclista da corrida.
                     tamanho--;
                     vetor_final[aux_fim].identificador = biker->identificador;
-                    //isso aqui q eu mudei, tava biker->identificador e troquei pra aux_fim
                     vetor_final[aux_fim].tempo_eliminacao = tempo + 20; //Elimina com uma passagem de tempo extra, já que considera a passagem de tempo da iteração atual em que atingiu a nova volta e foi eliminado.
                     aux_fim--;
-                    
+                        
                     velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
                     velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
                     
-                    /*
-                    printf("meu id: %ld\n", biker->identificador);
-                    for(int j = 1; j <= tamanho+1; j++) {
-                        printf("id:%ld arrive:%d\n", ciclistas[j].identificador, arrive[j]);
-                    }
-                    */
-
                     int flag_raiz = 0;
                     if(biker->posicao_arvore == 1)//É a raiz.
                         flag_raiz = 1; 
 
                     arrive[biker->posicao_arvore] = arrive[ciclistas[ultimo_arvore].posicao_arvore];
                     ciclistas[ultimo_arvore].posicao_arvore = biker->posicao_arvore;
-                    for(long int w = 1; w <= tamanho+1; w++) {
+                    biker->posicao_arvore = -1;
+                    for(long int w = 1; w <= n; w++) {
                         if(ciclistas[w].posicao_arvore == tamanho) {
                             ultimo_arvore = w;
                             break;
@@ -195,7 +188,8 @@ void instrucao(Ciclista* biker) {
                         for(int j = 1; j <= tamanho+1; j++)
                             arrive[j] = 0;
                         continua = 1 - continua;
-                    }   
+                    }
+
                     pthread_mutex_unlock(&mutex);
                     pthread_exit(NULL);
                 }
@@ -213,12 +207,6 @@ void instrucao(Ciclista* biker) {
                     velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
                     velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
                     printf("O corredor %ld quebrou na volta %ld e foi eliminado!", biker->identificador, biker->volta);
-                    /*
-                    printf("meu id: %ld\n", biker->identificador);
-                    for(int j = 1; j <= tamanho+1; j++) {
-                        printf("id:%ld arrive:%d\n", ciclistas[j].identificador, arrive[j]);
-                    }
-                    */
 
                     int flag_raiz = 0;
                     if(biker->posicao_arvore == 1)//É a raiz.
@@ -226,7 +214,8 @@ void instrucao(Ciclista* biker) {
 
                     arrive[biker->posicao_arvore] = arrive[ciclistas[ultimo_arvore].posicao_arvore];
                     ciclistas[ultimo_arvore].posicao_arvore = biker->posicao_arvore;
-                    for(long int w = 1; w <= tamanho+1; w++) {
+                    biker->posicao_arvore = -1;
+                    for(long int w = 1; w <= n; w++) {
                         if(ciclistas[w].posicao_arvore == tamanho) {
                             ultimo_arvore = w;
                             break;
@@ -349,19 +338,11 @@ void instrucao(Ciclista* biker) {
                 if(voltas_eliminacao[biker->volta] == tamanho - 1) {//Remoção deste ciclista da corrida.
                     tamanho--;
                     vetor_final[aux_fim].identificador = biker->identificador;
-                    //isso aqui q eu mudei, tava biker->identificador e troquei pra aux_fim
                     vetor_final[aux_fim].tempo_eliminacao = tempo+20; //Elimina com uma passagem de tempo extra, já que considera a passagem de tempo da iteração atual em que atingiu a nova volta e foi eliminado.
                     aux_fim--;
                     
                     velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
                     velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
-                    
-                    /*
-                    printf("meu id: %ld\n", biker->identificador);
-                    for(int j = 1; j <= tamanho+1; j++) {
-                        printf("id:%ld arrive:%d\n", ciclistas[j].identificador, arrive[j]);
-                    }
-                    */
 
                     int flag_raiz = 0;
                     if(biker->posicao_arvore == 1)//É a raiz.
@@ -369,7 +350,8 @@ void instrucao(Ciclista* biker) {
 
                     arrive[biker->posicao_arvore] = arrive[ciclistas[ultimo_arvore].posicao_arvore];
                     ciclistas[ultimo_arvore].posicao_arvore = biker->posicao_arvore;
-                    for(long int w = 1; w <= tamanho+1; w++) {
+                    biker->posicao_arvore = -1;
+                    for(long int w = 1; w <= n; w++) {
                         if(ciclistas[w].posicao_arvore == tamanho) {
                             ultimo_arvore = w;
                             break;
@@ -426,28 +408,17 @@ void* thread_ciclista(void* arg) {
             pthread_mutex_lock(&mutex);
             instrucao(biker);
 
-            /*
-            printf("\n----------INICIEI VELÓDROMO %ld----------\n", biker->identificador);
-            for(int i = 0; i < d; i++) {
-                for(int j = 0; j < 10; j++) {
-                    printf("%ld ", velodromo[i][j]);
-                }
-                printf("\n");
-            }
-            printf("\n----------FINALIZEI VELÓDROMO %ld----------\n", biker->identificador);
-            */
-
             pthread_mutex_unlock(&mutex);
             
             if (round == 0) {
                 while (continua == 0) {
-                    usleep(d*10*(5-1));//??
+                    usleep(d*10*(5-1));
                 }
                 round = 1;
             }
             else {
                 while (continua == 1) {
-                    usleep(d*10*(5-1));//??
+                    usleep(d*10*(5-1));
                 }
                 round = 0;                
             }
@@ -455,43 +426,28 @@ void* thread_ciclista(void* arg) {
 
         else if (biker->tipoNo == 2) { //Interno
             
-            if(2*biker->posicao_arvore <= tamanho) {
-                while(arrive[2*biker->posicao_arvore] == 0) {
-                    usleep(d*10*(5-1));
-                }
+            while(2*biker->posicao_arvore <= tamanho && arrive[2*biker->posicao_arvore] == 0) {
+                usleep(d*10*(5-1));
             }
 
-            if(2*biker->posicao_arvore + 1 <= tamanho) {
-                while(arrive[2*biker->posicao_arvore + 1] == 0) {
-                    usleep(d*10*(5-1));
-                }
+            while(2*biker->posicao_arvore + 1 <= tamanho && arrive[2*biker->posicao_arvore + 1] == 0) {
+                usleep(d*10*(5-1));
             }
 
             pthread_mutex_lock(&mutex);
             instrucao(biker);
 
-            /*
-            printf("\n----------INICIEI VELÓDROMO %ld----------\n", biker->identificador);
-            for(int i = 0; i < d; i++) {
-                for(int j = 0; j < 10; j++) {
-                    printf("%ld ", velodromo[i][j]);
-                }
-                printf("\n");
-            }
-            printf("\n----------FINALIZEI VELÓDROMO %ld----------\n", biker->identificador);
-            */
-
             pthread_mutex_unlock(&mutex);
 
             if (round == 0) {
                 while (continua == 0) {
-                    usleep(d*10*(5-1));//??
+                    usleep(d*10*(5-1));
                 }
                 round = 1;
             }
             else {
                 while (continua == 1) {
-                    usleep(d*10*(5-1));//??
+                    usleep(d*10*(5-1));
                 }
                 round = 0;                
             }
@@ -499,18 +455,12 @@ void* thread_ciclista(void* arg) {
 
         else { //Raiz
 
-            if(2*biker->posicao_arvore <= tamanho) {
-                while(arrive[2*biker->posicao_arvore] == 0) {
-                    usleep(d*40*(5-1));
-                }
-                //arrive[2*biker->posicao_arvore] = 0;
+            while(2*biker->posicao_arvore <= tamanho && arrive[2*biker->posicao_arvore] == 0) {
+                usleep(d*40*(5-1));
             }
 
-            if(2*biker->posicao_arvore + 1 <= tamanho) {
-                while(arrive[2*biker->posicao_arvore + 1] == 0) {
-                    usleep(d*40*(5-1));
-                }
-                //arrive[2*biker->posicao_arvore + 1] = 0;
+            while(2*biker->posicao_arvore + 1 <= tamanho && arrive[2*biker->posicao_arvore + 1] == 0) {
+                usleep(d*40*(5-1));
             }
 
             pthread_mutex_lock(&mutex);
