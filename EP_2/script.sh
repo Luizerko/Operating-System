@@ -2,6 +2,6 @@
 
 make;
 
-./ep2 250 5 1;
+./ep2 250 6 1;
 
 make clean;

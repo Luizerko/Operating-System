@@ -45,6 +45,7 @@ long int aux_ini, aux_fim;
 long int tamanho;
 int continua;
 long int ultimo_arvore;
+long int tempo_cruzamento;
 
 long int noventa_por_hora = -1;
 int flag_noventa;
@@ -207,6 +208,7 @@ void instrucao(Ciclista* biker) {
                     velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
                     velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
                     printf("O corredor %ld quebrou na volta %ld e foi eliminado!", biker->identificador, biker->volta);
+                    sleep(1);
 
                     int flag_raiz = 0;
                     if(biker->posicao_arvore == 1)//É a raiz.
@@ -245,7 +247,7 @@ void instrucao(Ciclista* biker) {
 
     else { //Duas últimas voltas
         if(flag_noventa != 1) {
-            if(rand()%1 == 0)
+            if(rand()%10 == 0)
                 noventa_por_hora = rand()%2;                
             flag_noventa = 1;
         }
@@ -334,6 +336,7 @@ void instrucao(Ciclista* biker) {
 
         if(coord_anterior.x < biker->coordenada.x) {
             biker->volta++;
+
             if(biker->volta%2 != 0) {
                 if(voltas_eliminacao[biker->volta] == tamanho - 1) {//Remoção deste ciclista da corrida.
                     tamanho--;
@@ -366,8 +369,10 @@ void instrucao(Ciclista* biker) {
                     pthread_mutex_unlock(&mutex);
                     pthread_exit(NULL);
                 }
-                else
+                else {
                     voltas_eliminacao[biker->volta]++;
+                    tempo_cruzamento = tempo+20;
+                }
             }
             if(biker->velocidade == 30) {
                 if(rand()%10 < 8)
@@ -504,7 +509,7 @@ int main (int argc, char* argv[]) {
     tamanho = n;
     ultimo_arvore = n;
     pthread_mutex_init(&mutex, NULL);
-    srand(1);
+    srand(time(NULL));
 
     ciclistas = malloc((n+1)*sizeof(Ciclista));
     thread_ciclistas = malloc(n*sizeof(pthread_t));
@@ -566,19 +571,6 @@ int main (int argc, char* argv[]) {
         }
     }
 
-    /* Printa velódromo
-    if(saida_completa) {
-        printf("\n----------INICIEI VELÓDROMO----------\n");
-        for(int i = 0; i < 2*d; i++) {
-            for(int j = 0; j < 10; j++) {
-                printf("%ld ", velodromo[i][j]);
-            }
-            printf("\n");
-        }
-        printf("\n----------FINALIZEI VELÓDROMO----------\n");
-    }
-    */
-
     for(long int i = 0; i < n; i++) {
         pthread_create(&thread_ciclistas[i], NULL, thread_ciclista, &ciclistas[i+1]);
     }
@@ -586,6 +578,8 @@ int main (int argc, char* argv[]) {
     for(long int i = 0; i < n; i++) {
         pthread_join(thread_ciclistas[i], NULL);
     }
+
+    vetor_final[aux_ini].tempo_eliminacao = tempo_cruzamento;
 
     for(long int i = 0; i < n; i++) {
         if(i < aux_ini) {
