@@ -1,0 +1,62 @@
+
+20 real	33m27.953s
+
+20 real	26m46.472s
+
+20 real	29m25.702s
+
+20 real	27m27.482s
+
+20 real	26m4.933s
+
+20 real	29m27.266s
+
+20 real	29m26.905s
+
+20 real	28m5.614s
+
+20 real	29m26.016s
+
+20 real	25m25.866s
+
+20 real	26m6.870s
+
+20 real	27m26.282s
+
+20 real	30m46.254s
+
+20 real	24m6.565s
+
+20 real	30m47.382s
+
+20 real	32m7.887s
+
+20 real	31m26.235s
+
+20 real	32m7.837s
+
+20 real	26m46.920s
+
+20 real	26m6.585s
+
+20 real	27m26.203s
+
+20 real	30m47.317s
+
+20 real	26m46.309s
+
+20 real	31m27.646s
+
+20 real	28m6.882s
+
+20 real	26m46.669s
+
+20 real	29m27.499s
+
+20 real	32m48.727s
+
+20 real	29m25.711s
+
+20 real	30m47.883s
+
+20 

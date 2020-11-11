@@ -1,0 +1,8 @@
+Para compilar o programa:
+	make
+
+Para rodar o programa:
+	./ep2 d n 1
+
+OBS: Esse parâmetro 1 é opcional e, quando usado, habilita a saída completa
+do programa - opção de debug.

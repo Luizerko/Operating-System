@@ -29,7 +29,7 @@ typedef struct ciclista {
 
 
 //Estrutura que guarda os dados em relação à finalização da corrida de um ciclista. contém seu identificador, seu rank na corrida (caso não tenha sido eliminado por quebrar), 
-//o momento em que ele foi eliminado e a votlta em que ele quebrou (caso tenha quebrado).
+//o momento em que ele foi eliminado e a volta em que ele quebrou (caso tenha quebrado).
 
 typedef struct final_ciclista {
     long int identificador;
@@ -38,8 +38,8 @@ typedef struct final_ciclista {
     long int volta_quebra;
 } Final_Ciclista;
 
-_Atomic long int** velodromo; //Velodromo onde acontece a corrida representando 1m em relação a y e0,5m em relação a x por posição.
-long int ** pista; //Velodromo ajustado para d posições. 
+_Atomic long int** velodromo; //Velódromo onde acontece a corrida representando 1m em relação a y e 0,5m em relação a x por posição.
+long int ** pista; //Velódromo ajustado para d posições. 
 pthread_mutex_t mutex; //Mutex que impede que a instrução de movimento de ciclistas diferentes rode ao mesmo tempo.
 pthread_t* thread_ciclistas;
 Ciclista* ciclistas;
@@ -65,7 +65,7 @@ int mod(long int num, long int d) {
     return num%d; 
 }
 
-//Checa se um ciclista está na mesma coordenada em relação a x do biker e na coordenada aux_y em relação a y, retornando 1 caso sim e - caso não.
+//Checa se um ciclista está na mesma coordenada em relação a x do biker e na coordenada aux_y em relação a y, retornando 1 caso sim e 0 caso não.
 int lado(Ciclista* biker, int aux_y) {
     if(velodromo[biker->coordenada.x][aux_y] != -1 && ((velodromo[biker->coordenada.x][aux_y] == velodromo[mod(biker->coordenada.x+1, 2*d)][aux_y]) ||
         (velodromo[biker->coordenada.x][aux_y] != velodromo[mod(biker->coordenada.x+1, 2*d)][aux_y] && velodromo[mod(biker->coordenada.x+1, 2*d)][aux_y] != -1)) )
@@ -73,7 +73,7 @@ int lado(Ciclista* biker, int aux_y) {
     return 0;
 }
 
-//Checa se um ciclista está uma posição atras em relação à coordenada x do biker e na coordenada aux_y em relação a y, retornando 1 caso sim e - caso não.
+//Checa se um ciclista está uma posição atrás em relação à coordenada x do biker e na coordenada aux_y em relação a y, retornando 1 caso sim e 0 caso não.
 int lado_mais_um(Ciclista* biker, int aux_y) {
     if(velodromo[mod(biker->coordenada.x+1, 2*d)][aux_y] != -1 && ((velodromo[mod(biker->coordenada.x+1, 2*d)][aux_y] == velodromo[mod(biker->coordenada.x+2, 2*d)][aux_y]) ||
         (velodromo[mod(biker->coordenada.x+1, 2*d)][aux_y] != velodromo[mod(biker->coordenada.x+2, 2*d)][aux_y] && velodromo[mod(biker->coordenada.x+2, 2*d)][aux_y] != -1)) )
@@ -124,13 +124,13 @@ void instrucao(Ciclista* biker) {
         else if(biker->velocidade == 60) { //Movimentação para ciclistas com velocidade de 60km/h.
             int aux_y = biker->coordenada.y;
             
-            //Checa se é possível para o ciclista andar a 60km/h para frente sem se chocar com outro ciclista
+            //Checa se é possível para o ciclista andar a 60km/h para frente sem se chocar com outro ciclista.
             if((velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y] == -1 || (ciclistas[velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y]].velocidade == 60 && !arrive[ciclistas[velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y]].posicao_arvore])) && 
                 (velodromo[mod(biker->coordenada.x-2, 2*d)][aux_y] == -1 || !arrive[ciclistas[velodromo[mod(biker->coordenada.x-2, 2*d)][aux_y]].posicao_arvore])) {
                 
                 biker->coordenada.x = mod(biker->coordenada.x-2, 2*d); //Anda 1m para frente no velódromo.
                 
-                //Checa se é possível para o ciclista se posicionar mais à esquerda no velodromo, modificando sua coordenada em relação à y se possível.
+                //Checa se é possível para o ciclista se posicionar mais à esquerda no velódromo, modificando sua coordenada em relação à y se possível.
                 aux_y = 0;
                 while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
                         (lado_mais_um(biker, aux_y)) ||
@@ -140,11 +140,11 @@ void instrucao(Ciclista* biker) {
                 biker->coordenada.y = aux_y;
 
             }
-            else { //Caso em que o ciclista não conseguiu andar para frente a 60km/h
+            else { //Caso em que o ciclista não conseguiu andar para frente a 60km/h.
             
                 biker->coordenada.x = mod(biker->coordenada.x-2, 2*d); //Anda 1m para frente no velódromo.
                 
-                //Checa se ele consegue andar a 60km/h para para frente e para a direita em alguma posição, modificando aux_y ao tentar outra posição
+                //Checa se ele consegue andar a 60km/h para para frente e para a direita em alguma posição, modificando aux_y ao tentar outra posição.
                 while(aux_y < 10 && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
                         (lado_mais_um(biker, aux_y)) ||
                         (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
@@ -156,7 +156,7 @@ void instrucao(Ciclista* biker) {
                     //Corrige a coordenada por ter andando a 30km/h e não a 60.
                     biker->coordenada.x = mod((biker->coordenada.x + 1), 2*d);
                     
-                    //Analisa a primeira posição da esquerda apra direita em que o ciclista pode se posicionar no velódormo.
+                    //Analisa a primeira posição da esquerda para direita em que o ciclista pode se posicionar no velódormo.
                     aux_y = 0;
                     while(aux_y < biker->coordenada.y && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
                         (lado_mais_um(biker, aux_y)) ||
@@ -184,12 +184,12 @@ void instrucao(Ciclista* biker) {
             biker->volta++;
             if(biker->volta%2 != 0) {
                 if(voltas_eliminacao[biker->volta] == tamanho - 1) {//Remoção deste ciclista da corrida no caso em que ele foi o último a completar essa volta.
-                    tamanho--; //Diminui o número de iclistas na corrida.
+                    tamanho--; //Diminui o número de cilistas na corrida.
                     vetor_final[aux_fim].identificador = biker->identificador;
                     vetor_final[aux_fim].tempo_eliminacao = tempo + 60; //Elimina com uma passagem de tempo extra, já que considera a passagem de tempo da iteração atual em que atingiu a nova volta e foi eliminado.
                     aux_fim--;
                     
-                    //Tira do velodoromo o identificador od ciclista da posição em que estava, já que foi eliminado.
+                    //Tira do velodoromo o identificador od ciclista da posição em que estava, já que foi eliminado.ó
                     velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
                     velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
                     
@@ -227,12 +227,12 @@ void instrucao(Ciclista* biker) {
 
             if (biker->volta%6 == 0 && tamanho > 5) { //Checa se ciclistas podem ser removidos da prova por quebrar nessa iteração.
                 if(rand()%100 < 5) { //Decide se um ciclista quebra.
-                    tamanho--; //Diminui o número de iclistas na corrida.
+                    tamanho--; //Diminui o número de cilistas na corrida.
                     vetor_final[aux_fim].identificador = biker->identificador;
                     vetor_final[aux_fim].tempo_eliminacao = tempo + 60; //Elimina com uma passagem de tempo extra, já que considera a passagem de tempo da iteração atual em que atingiu a nova volta e foi eliminado.
                     aux_fim--;
                     
-                    //Tira do velodoromo o identificador od ciclista da posição em que estava, já que foi eliminado
+                    //Tira do velódoromo o identificador do ciclista da posição em que estava, já que foi eliminado.
                     velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
                     velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
                     
@@ -240,7 +240,7 @@ void instrucao(Ciclista* biker) {
                     if(biker->posicao_arvore == 1)//É a raiz.
                         flag_raiz = 1; 
                     
-                    //Troca o arrive do ultimo ciclista da ármore pelo que está sendo eliminado e, depois, troca a posição deles na árvore.
+                    //Troca o arrive do último ciclista da ármore pelo que está sendo eliminado e, depois, troca a posição deles na árvore.
                     arrive[biker->posicao_arvore] = arrive[ciclistas[ultimo_arvore].posicao_arvore];
                     ciclistas[ultimo_arvore].posicao_arvore = biker->posicao_arvore;
                     biker->posicao_arvore = -1; //Atribui -1 a posição da árvore removida para que não gere problemas posteriormente.
@@ -278,10 +278,10 @@ void instrucao(Ciclista* biker) {
         }
     }
 
-    else { //Duas últimas voltas
+    else { //Duas últimas voltas.
         //Calcula se um ciclista vai andar a 90km/h nas duas  últimas voltas e qual deles andará nessa velocidade.
         if(flag_noventa != 1) {
-            if(rand()%1 == 0) // TROCAR ISSO DEPOIS PARA rand()%10 == 0
+            if(rand()%10 == 0)  
                 noventa_por_hora = rand()%2;                
             flag_noventa = 1;
         }
@@ -310,7 +310,7 @@ void instrucao(Ciclista* biker) {
         else if(biker->velocidade == 60) {
             int aux_y = biker->coordenada.y;
             
-            //Checa se é possível para o ciclista andar a 60km/h para frente sem se chocar com outro ciclista
+            //Checa se é possível para o ciclista andar a 60km/h para frente sem se chocar com outro ciclista.
             if((velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y] == -1 || (ciclistas[velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y]].velocidade != 30 && !arrive[ciclistas[velodromo[mod(biker->coordenada.x-1, 2*d)][aux_y]].posicao_arvore])) && 
               (velodromo[mod(biker->coordenada.x-2, 2*d)][aux_y] == -1 || !arrive[ciclistas[velodromo[mod(biker->coordenada.x-2, 2*d)][aux_y]].posicao_arvore])) {
                     
@@ -326,11 +326,11 @@ void instrucao(Ciclista* biker) {
                 biker->coordenada.y = aux_y;
 
             }
-            else { //Caso em que o ciclista não conseguiu andar para frente a 60km/h
+            else { //Caso em que o ciclista não conseguiu andar para frente a 60km/h.
             
                 biker->coordenada.x = mod(biker->coordenada.x-2, 2*d); //Anda 1m para frente no velódromo.
                 
-                //Checa se ele consegue andar a 60km/h para para frente e para a direita em alguma posição, modificando aux_y ao tentar outra posição
+                //Checa se ele consegue andar a 60km/h para para frente e para a direita em alguma posição, modificando aux_y ao tentar outra posição.
                 while(aux_y < 10 && ((lado(biker, aux_y) && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade == 30) ||
                         (lado_mais_um(biker, aux_y)  && ciclistas[velodromo[biker->coordenada.x][aux_y]].velocidade != 90) ||
                         (velodromo[biker->coordenada.x][aux_y] != -1 && arrive[ciclistas[velodromo[biker->coordenada.x][aux_y]].posicao_arvore]))) {
@@ -372,12 +372,12 @@ void instrucao(Ciclista* biker) {
 
             if(biker->volta%2 != 0) {
                 if(voltas_eliminacao[biker->volta] == tamanho - 1) {//Remoção deste ciclista da corrida no caso em que ele foi o último a completar essa volta.
-                    tamanho--; //Diminui o número de iclistas na corrida.
+                    tamanho--; //Diminui o número de cilistas na corrida.
                     vetor_final[aux_fim].identificador = biker->identificador;
                     vetor_final[aux_fim].tempo_eliminacao = tempo+60; //Elimina com uma passagem de tempo extra, já que considera a passagem de tempo da iteração atual em que atingiu a nova volta e foi eliminado.
                     aux_fim--;
                     
-                    //Tira do velodoromo o identificador od ciclista da posição em que estava, já que foi eliminado.
+                    //Tira do velodoromo o identificador do ciclista da posição em que estava, já que foi eliminado.
                     velodromo[biker->coordenada.x][biker->coordenada.y] = -1;
                     velodromo[mod(biker->coordenada.x+1, 2*d)][biker->coordenada.y] = -1;
 
@@ -390,7 +390,7 @@ void instrucao(Ciclista* biker) {
                     ciclistas[ultimo_arvore].posicao_arvore = biker->posicao_arvore;
                     biker->posicao_arvore = -1; //Atribui -1 a posição da árvore removida para que não gere problemas posteriormente.
 
-                    //Acha o identificador do ciclsita que está na nova última posição da árvore.
+                    //Acha o identificador do ciclista que está na nova última posição da árvore.
                     for(long int w = 1; w <= n; w++) {
                         if(ciclistas[w].posicao_arvore == tamanho) {
                             ultimo_arvore = w;
@@ -435,8 +435,6 @@ void* thread_ciclista(void* arg) {
     Ciclista* biker = (Ciclista*)arg;
 
     while(1) {
-
-        printf(" menino %ld, velocidade %ld e tô na volta: %ld\n", biker->identificador, biker->velocidade, biker->volta);
 
         //Caso em que só sobrou um ciclista na corrida, terminando sua execução.
         if (tamanho == 1) {
@@ -527,91 +525,70 @@ void* thread_ciclista(void* arg) {
                     }
                 }
                 
-                /*
-                if(noventa_por_hora != -1 && noventa_por_hora != 2) {
-                    int printa_20_ms = 2;
+                //Caso especial de simulação a cada 20ms em vez de a cada 60ms.
+                if(noventa_por_hora == 1 || noventa_por_hora == 0 || noventa_por_hora == 11 || noventa_por_hora == -10) {
+                    int printa_20_ms = 1;
+                    long int** pista_aux;
+                    pista_aux = malloc(d*sizeof(long int*));
+                    for (int i = 0; i < d; i++)
+                        pista_aux[i] = malloc(10*sizeof(long int));
                     while(printa_20_ms >= 0) {
                         printf("\n---------- INICIEI VELÓDROMO (20) ----------\n");
-                        
-                        if(printa_20_ms == 2) {
+                        for (int i = 0; i < d; i++) {
+                            for(int j = 0; j < 10; j++) {
+                                pista_aux[i][j] = -1;
+                            }
+                        }
+                        //pista_aux é o velódromo 20ms depois da última iteração.
+                        if(printa_20_ms == 1) {
                             for(int i = 0; i < d; i++) {
                                 for(int j = 0; j < 10; j++) {
-                                    if(pista[i][j] != -1) {
-                                        if(pista[mod(i+1, d)][j] != -1) {
-                                            pista[mod(i+2, d)][j] = pista[mod(i+1, d)][j];
-                                            pista[mod(i+1, d)][j] = pista[i][j];
-                                            pista[i][j] = -1;
-                                            j = 10;
-                                            i = d;
-                                        }
-                                        else {
-                                            pista[mod(i+1, d)][j] = pista[i][j];
-                                            pista[i][j] = -1;
-                                        }
+                                    if(pista[i][j] != -1 && ciclistas[pista[i][j]].velocidade != 30) {
+                                        pista_aux[mod(i+1, d)][j] = pista[i][j];
+                                    }
+                                    else if (pista[i][j] != -1) {
+                                        pista_aux[i][j] = pista[i][j];
                                     }
                                 }
                             }
                         }
-                        
-                        else if(printa_20_ms == 1){
-                            for(int i = 0; i < d; i++) {
-                                for(int j = 0; j < 10; j++) {
-                                    if(pista[i][j] != -1 && ciclistas[pista[i][j]].velocidade == 90) {
-                                        if(pista[mod(i-1, d)][j] != -1) {
-                                            j = 10;
-                                            i = d;
-                                        }
-                                        else {
-                                            pista[mod(i-1, d)][j] = pista[i][j];
-                                            pista[i][j] = -1;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        
+                        //Pista_aux é o velódromo 40ms depois da última iteração.
                         else {
                             for(int i = 0; i < d; i++) {
                                 for(int j = 0; j < 10; j++) {
                                     if(pista[i][j] != -1 && ciclistas[pista[i][j]].velocidade == 90) {
-                                        if(pista[mod(i-1, d)][j] != -1) {
-                                            pista[mod(i-2, d)][j] = pista[mod(i-1, d)][j];
-                                            pista[mod(i-1, d)][j] = pista[i][j];
-                                            pista[i][j] = -1;
-                                            j = 10;
-                                            i = d;
+                                        if(pista[mod(i+1, d)][j] != -1 && ciclistas[pista[i][j]].velocidade == 60) {
+                                            pista_aux[mod(i+1, d)][j] = pista[i][j];
+                                        }
+                                        else {
+                                            pista_aux[i][j] = pista[i][j];
                                         }
                                     }
-                                    else if(pista[i][j] != -1 && ciclistas[pista[i][j]].velocidade != 90) {
-                                        pista[mod(i-1, d)][j] = pista[i][j];
-                                        pista[i][j] = -1;
+                                    else if(pista[i][j] != -1 && ciclistas[pista[i][j]].velocidade == 60) {
+                                        pista_aux[mod(i+1, d)][j] = pista[i][j];
+                                    }
+                                    else if (pista[i][j] != -1) {
+                                        pista_aux[i][j] = pista[i][j];
                                     }
                                 }
                             }
                         }
-                        
+                        //Print da pista no intervalo entre os 60ms.
                         for(int i = 0; i < d; i++) {
                             for(int j = 0; j < 10; j++) {
-                                printf("%ld ", pista[i][j]);
+                                printf("%ld ", pista_aux[i][j]);
                             }
                             printf("\n");
                         }
-                        /*
-                        for(int i = 0; i < 2*d; i++) {
-                            for(int j = 0; j < 10; j++) {
-                                printf("%ld ", velodromo[i][j]);
-                            }
-                            printf("\n");
-                        }
-                        
                        
                         printf("\n---------- FINALIZEI VELÓDROMO (20) ----------\n");
                         printa_20_ms--;
                     }
-                    getchar();
+                    for (int i = 0; i < d; i++)
+                        free(pista_aux[i]);
+                    free(pista_aux);
                 }
-                */
-
+                //Print padrão 60ms depois da última iteração
                 printf("\n---------- INICIEI VELÓDROMO ----------\n");
                 for(int i = 0; i < d; i++) {
                     for(int j = 0; j < 10; j++) {
@@ -619,14 +596,6 @@ void* thread_ciclista(void* arg) {
                     }
                     printf("\n");
                 }  
-                /*
-                for(int i = 0; i < 2*d; i++) {
-                    for(int j = 0; j < 10; j++) {
-                        printf("%ld ", velodromo[i][j]);
-                    }
-                    printf("\n");
-                }
-                */
                 printf("\n---------- FINALIZEI VELÓDROMO ----------\n");
                 
             }
@@ -650,8 +619,6 @@ void* thread_ciclista(void* arg) {
 }
 
 int main (int argc, char* argv[]) {
-
-    clock_t start = clock();
 
     d = (long int)atoi(argv[1]); //Recebe o tamanho do velódromo.
     n = (long int)atoi(argv[2]); //Recebe o númeor de ciclistas.
@@ -690,7 +657,7 @@ int main (int argc, char* argv[]) {
         vetor_final[i].volta_quebra = -1;
     }
 
-    //Dados iniciais de todos os cilcistas.
+    //Dados iniciais de todos os ciclistas.
     for(long int i = 1; i <= n; i++) {
         ciclistas[i].velocidade = 30;
         ciclistas[i].volta = 0;
@@ -774,49 +741,6 @@ int main (int argc, char* argv[]) {
     free(voltas_eliminacao);
     free(vetor_final);
     free(arrive);
-
-    clock_t end = clock();
-    double time_computed = (double)(end - start)/CLOCKS_PER_SEC;
-    
-    FILE* ptr;
-    
-    if(d <= 250) {
-        if(n <= 5) {
-            ptr = fopen("grafico_pista_pequena_poucos.txt", "a+");
-        }
-        else if (n <= 20) {
-            ptr = fopen("grafico_pista_pequena_medios.txt", "a+");
-        }
-        else {
-            ptr = fopen("grafico_pista_pequena_muitos.txt", "a+");
-        }
-    }
-    else if(d <= 500) {
-        if(n <= 5) {
-            ptr = fopen("grafico_pista_media_poucos.txt", "a+");
-        }
-        else if (n <= 20) {
-            ptr = fopen("grafico_pista_media_medios.txt", "a+");
-        }
-        else {
-            ptr = fopen("grafico_pista_media_muitos.txt", "a+");
-        }
-    }
-    else {
-        if(n <= 5) {
-            ptr = fopen("grafico_pista_grande_poucos.txt", "a+");
-        }
-        else if (n <= 20) {
-            ptr = fopen("grafico_pista_grande_medios.txt", "a+");
-        }
-        else {
-            ptr = fopen("grafico_pista_grande_muitos.txt", "a+");
-        }
-    }
-
-    fprintf(ptr, "%ld %lf\n", n, time_computed);
-    
-    fclose(ptr);
 
     return 0;
 }

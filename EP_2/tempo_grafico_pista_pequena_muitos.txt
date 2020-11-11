@@ -1,0 +1,62 @@
+
+50 real	17m27,705s
+
+50 real	18m3,591s
+
+50 real	18m51,359s
+
+50 real	16m1,517s
+
+50 real	19m47,211s
+
+50 real	19m9,514s
+
+50 real	16m53,053s
+
+50 real	17m53,970s
+
+50 real	16m24,197s
+
+50 real	16m44,071s
+
+50 real	17m58,664s
+
+50 real	17m26,785s
+
+50 real	16m33,662s
+
+50 real	17m43,073s
+
+50 real	15m12,872s
+
+50 real	18m20,878s
+
+50 real	18m19,202s
+
+50 real	17m59,868s
+
+50 real	17m55,899s
+
+50 real	19m48,901s
+
+50 real	16m32,148s
+
+50 real	17m5,218s
+
+50 real	18m32,934s
+
+50 real	17m32,873s
+
+50 real	16m20,012s
+
+50 real	16m18,019s
+
+50 real	15m16,847s
+
+50 real	17m20,533s
+
+50 real	15m27,474s
+
+50 real	16m42,147s
+
+50 

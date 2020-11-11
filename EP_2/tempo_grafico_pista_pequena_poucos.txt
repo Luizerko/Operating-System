@@ -1,0 +1,62 @@
+
+5 real	1m50,312s
+
+5 real	1m50,305s
+
+5 real	1m50,270s
+
+5 real	1m50,229s
+
+5 real	1m50,297s
+
+5 real	1m40,232s
+
+5 real	1m40,279s
+
+5 real	2m0,300s
+
+5 real	1m50,331s
+
+5 real	1m50,308s
+
+5 real	1m50,265s
+
+5 real	2m0,288s
+
+5 real	1m50,284s
+
+5 real	1m50,313s
+
+5 real	1m50,283s
+
+5 real	2m0,290s
+
+5 real	1m50,308s
+
+5 real	1m50,505s
+
+5 real	1m40,498s
+
+5 real	1m50,527s
+
+5 real	1m50,542s
+
+5 real	2m0,583s
+
+5 real	1m30,454s
+
+5 real	1m40,488s
+
+5 real	1m40,500s
+
+5 real	2m0,597s
+
+5 real	1m50,549s
+
+5 real	1m50,567s
+
+5 real	1m50,570s
+
+5 real	2m0,596s
+
+5 
