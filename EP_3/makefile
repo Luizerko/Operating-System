@@ -1,4 +1,4 @@
-LFLAGS = -lreadline
+LFLAGS = -lreadline -lm
 
 all: ep3
 
