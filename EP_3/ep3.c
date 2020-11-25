@@ -13,6 +13,8 @@
 #define MAX_PALAVRAS 10
 #define MAX_TAMANHO_PALAVRA 20
 
+char sistema_de_arquivos[200];
+
 char** parser(char* linha) {
     char** parsed = malloc(MAX_PALAVRAS*sizeof(char*));
     for(int i = 0; i < 10; i++) {
@@ -33,6 +35,7 @@ char** parser(char* linha) {
 }
 
 int main() {
+    strcpy(sistema_de_arquivos, "/home/lui/Documents/IME/2020.2/SO/SO_rep/EP_3/simulacao/arquivo_simula");
     while(1) {
         printf("[ep3]: ");
         char* linha = readline("");
@@ -40,6 +43,12 @@ int main() {
         char** parseiro = parser(linha);
 
         if (strcmp(parseiro[0], "mount") == 0) {
+            /* LEMBRAR DE TROCAR PRA ISSO DEPOIS
+            for(int i = 0; i < strlen(parseiro[1]); i++) {
+                sistema_de_arquivos[i] = parseiro[1][i];
+            }
+            sistema_de_arquivos[strlen(parseiro[1])] = '\0';
+            */
             if(access("simulacao/arquivo_simula", F_OK) == -1) {
                 FILE* f = fopen("simulacao/arquivo_simula"/*parseiro[1]*/, "a+"); //lembrar de trocar por parseiro[1].
                 //FAT começa a contar da posição 1, ou seja, a primeira posição do FAT indica linha 1 e não linha 0. Caso tenha um valor 0 numa posição do FAT, significa que essa posição está vazia.
@@ -95,12 +104,12 @@ int main() {
 
                         if(insercao_anterior == 0) {
                             fseek(f, -21, SEEK_CUR);
-                            fprintf(f, "%s" , parseiro[1]);
+                            fprintf(f, "%s," , parseiro[1]);
                         }
 
                         else {
-                            fseek(f, insercao_anterior, SEEK_SET);
-                            fprintf(f, ",%d",  bloco_interno);
+                            fseek(f, insercao_anterior + 1, SEEK_SET);
+                            fprintf(f, "%d",  bloco_interno);
                         }
 
                         fseek(f, insercao + 1, SEEK_SET);
@@ -111,7 +120,9 @@ int main() {
                         blocos--;
                         if(blocos == 0) {
                             fseek(f, -21, SEEK_CUR);
-                            fprintf(f, ",-1");
+                            if (filesize <= 4096)
+                                fseek(f, strlen(parseiro[1]) + 1, SEEK_CUR);
+                            fprintf(f, "-1");
                             fseek(f, 21, SEEK_CUR);
                         }
 
@@ -176,16 +187,13 @@ int main() {
                     block_size = 4096;
                 if (posicao_bloco >= block_size) {
                     bloco[posicao_bloco] = '\0';
-                    fprintf(f, "%s|\n", bloco);
+                    fprintf(f, "%s|", bloco);
                     fseek(f, -2 , SEEK_CUR);
                     if(indice_bloco < posicao_blocos_ocupados) {
                         for(char c = getc(f); c != EOF; c = getc(f)) {
-                            if(c == '|') {
+                            if(c == '|')
                                 contador_de_linha++;
-                                printf("%d\n", contador_de_linha);
-                            }
                             if(contador_de_linha == blocos_ocupados[indice_bloco]){
-                                printf("entrei aqui\n");
                                 indice_bloco++;
                                 fseek(f, 1, SEEK_CUR);
                                 break;
@@ -200,7 +208,7 @@ int main() {
             }
             if(posicao_bloco != 0) {
                 bloco[posicao_bloco] = '\0';
-                fprintf(f, "%s|\n", bloco);
+                fprintf(f, "%s|", bloco);
             }
 
             fclose(origem);
@@ -221,13 +229,18 @@ int main() {
             FILE* f = fopen("simulacao/arquivo_simula", "r+");
             char c;
             char bloco_mem[6];
+            int conta_blocos = 1;
             while((c = getc(f)) != '\n') {
+                if(c == '|')
+                    conta_blocos++;
                 if(c == parseiro[1][0]) {
                     for(int i = 1; i < strlen(parseiro[1]); i++) {
                         if(parseiro[1][i] != getc(f)){
                             break;
                         } 
                         if (i == strlen(parseiro[1]) - 1) {
+                            blocos_posicoes[indice_posicao] = conta_blocos;
+                            indice_posicao++;
                             getc(f);
                             int j = 0;
                             while((c = getc(f)) != ' ' && c != '|') {
@@ -235,17 +248,20 @@ int main() {
                                 j++;
                             }
                             bloco_mem[j] = '\0';
-                            blocos_posicoes[indice_posicao] = atoi(bloco_mem);
+                            if (strcmp(bloco_mem, "-1") == 0)
+                                blocos_posicoes[indice_posicao] = -1;
+                            else
+                                blocos_posicoes[indice_posicao] = atoi(bloco_mem);
                             indice_posicao++;
                             achou = 1;
                         }
                     }
                 }
                 
-                if(achou && blocos_posicoes[0] != -1) {
+                if(achou && blocos_posicoes[1] != -1) {
 
                     anterior = blocos_posicoes[0];
-                    fseek(f, 21*blocos_posicoes[0], SEEK_SET);
+                    fseek(f, 21*(blocos_posicoes[0]), SEEK_SET);
 
                     int j = 0;
                     while((c = getc(f)) != ' ' && c != '|') {
@@ -254,8 +270,10 @@ int main() {
                     }
                     bloco_mem[j] = '\0';
                     //lemrbar que o bloco posicao ja ta erado aqui, se pa o blocomem ta dando merda. checar dps.
-
-                    blocos_posicoes[indice_posicao] = atoi(bloco_mem);
+                    if (strcmp(bloco_mem, "-1") == 0)
+                        blocos_posicoes[indice_posicao] = -1;
+                    else
+                        blocos_posicoes[indice_posicao] = atoi(bloco_mem);
                     indice_posicao++;
                     while(getc(f) != '|');
 
@@ -269,7 +287,10 @@ int main() {
                             j++;
                         }
                         bloco_mem[j] = '\0';
-                        blocos_posicoes[indice_posicao] = atoi(bloco_mem);
+                        if (strcmp(bloco_mem, "-1") == 0)
+                            blocos_posicoes[indice_posicao] = -1;
+                        else
+                            blocos_posicoes[indice_posicao] = atoi(bloco_mem);
                         indice_posicao++;
                     }
                     break;
@@ -281,28 +302,61 @@ int main() {
 
             while(getc(f) != '\n');
             while(getc(f) != '\n');
-
+            
             char aux;
             int contador_linha = 1;
-            for(int i = 0; i < indice_posicao; i++) {
-                while(contador_linha != blocos_posicoes[indice_posicao]) {
+            int contador_virgula = 0;
+            for(int i = 0; i < indice_posicao - 1; i++) {
+                while(contador_linha != blocos_posicoes[i]) {
                     while(getc(f) != '|');
                     contador_linha++;
                 }
-                while((aux = getc(f)) != '|')
-                    printf("%c", aux);
+                while((aux = getc(f)) != '|') {
+                    if (contador_virgula >= 2) //Mudar posteriormente para a quantidade de vírgulas referente aos metadados
+                        printf("%c", aux);
+                    if (aux == ',')
+                        contador_virgula++;
+                }
                 contador_linha++;
-                indice_posicao++;
             }
-            
+
+            fclose(f);
         }
 
         else if (strcmp(parseiro[0], "touch") == 0) {
+            FILE* f = fopen("simulacao/arquivo_simula", "r+");
             
+            while(getc(f) != '\n');
+            
+            int contador_blocos = 1;
+            int contador_blocos2;
+            while(getc(f) != '0')
+                contador_blocos++;
+            fseek(f, -1, SEEK_CUR);
+            fprintf(f, "1");
+
+            contador_blocos2 = contador_blocos;
+
+            while(getc(f) != '\n');
+            
+            while(contador_blocos > 1) {
+                while(getc(f) != '|');
+                contador_blocos--;
+            }
+
+            fprintf(f, "%s,0,|", parseiro[1]);
+            
+            fseek(f, 21*(contador_blocos2-1), SEEK_SET);
+            fprintf(f, "%s,-1", parseiro[1]);
+
+            fclose(f);
+
         }
 
         else if (strcmp(parseiro[0], "rm") == 0) {
-            
+            //fudeu vamo ter q aapaagr essa merda toda agr que desgraça puta merda.
+            //vcau ter q apagar tudoe e screver denovo só pra tirar um bagulhets.
+
         }
 
         else if (strcmp(parseiro[0], "ls") == 0) {
@@ -318,11 +372,15 @@ int main() {
         }
 
         else if (strcmp(parseiro[0], "umount") == 0) {
-            
+            printf("%s\n", sistema_de_arquivos);
+            if(remove(sistema_de_arquivos) == 0)
+                printf("sistema de arquivos deletado.\n");
+            else
+                printf("erro na delecao do sistema de arquivos.\n");
         }
 
         else if (strcmp(parseiro[0], "sai") == 0) {
-            
+            exit(0);
         }
 
     }
