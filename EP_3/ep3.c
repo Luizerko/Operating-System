@@ -172,9 +172,24 @@ int main() {
                     break;
                 }
             }
+
+            char parseiro_auxiliar[200];
+            strcpy(parseiro_auxiliar, parseiro[2]);
+            int ind = 0;
+            char aux_ind[50];
+            for(int i = 0; i < strlen(parseiro[1]); i++) {
+                aux_ind[ind] = parseiro[1][i];
+                ind++;
+                if(parseiro[1][i] == '/') {
+                    ind = 0;
+                }
+            }
+            aux_ind[ind] = '\0';
+            strcat(parseiro_auxiliar, aux_ind);
+
             int tamanho_file = filesize/10;
-            fprintf(f, "%s,%ld,", parseiro[1], filesize);
-            int tamanho_meta = strlen(parseiro[1]) + tamanho_file;
+            fprintf(f, "%s,%ld,", parseiro_auxiliar, filesize);
+            int tamanho_meta = strlen(parseiro_auxiliar) + tamanho_file;
             int block_size = 4096;
             int indice_bloco = 1;
 
@@ -208,15 +223,132 @@ int main() {
             }
             if(posicao_bloco != 0) {
                 bloco[posicao_bloco] = '\0';
-                fprintf(f, "%s|", bloco);
+                fprintf(f, "%s", bloco);
+                for(int j = 0; j < 4096 - strlen(bloco); j++) {
+                    fprintf(f, " ");
+                }
+                fprintf(f, "|");
             }
+
+            if(strlen(parseiro[2]) != 1) {
+                fseek(f, 0, SEEK_SET);
+                char aux2;
+                int conta_blocos = 1;
+                while((aux = getc(f)) != '\n') {
+                    if(aux == '|')
+                        conta_blocos++;
+                    if (aux == '@') {
+                        int k = 0;
+                        
+                        while((aux2 = getc(f)) != ',') {
+                            
+                            if (aux2 != parseiro[2][k]) {
+                                break;
+                            }
+                            k++;
+                        }
+                        if (aux2 == ',') {
+                            break;
+                        }
+                    }
+                }
+                if(aux == '\n') {
+                    printf("Diretório inexistente!\n");
+                }
+
+                while(getc(f) != '\n');
+                while(getc(f) != '\n');
+                
+                while (conta_blocos > 1) {
+                    while (getc(f) != '|');
+                    conta_blocos--;
+                }
+                
+                while((aux = getc(f)) != ',');
+                char numero_string[10];
+                int indice_numero_string = 0;
+                long numero;
+                while((aux = getc(f)) != ' ' && aux != '.') {
+                    numero_string[indice_numero_string] = aux;
+                    indice_numero_string++;
+                }
+                numero_string[indice_numero_string] = '\0';
+                numero = atoi(numero_string);
+                numero += filesize;
+                fseek(f, -(indice_numero_string + 1), SEEK_CUR);
+                fprintf(f, "%ld", numero);
+
+                while((aux = getc(f)) != '.');
+                while((aux = getc(f)) != ' ');
+                fseek(f, -1, SEEK_CUR);
+                fprintf(f, "%s,%ld.", parseiro[1], filesize);
+            }
+            
+            /*while((c = getc(f)) != '\n') {
+                if(c == '|')
+                    conta_blocos++;
+                if(c == parseiro[1][0]) {
+                    for(int i = 1; i < strlen(parseiro[1]); i++) {
+                        if(parseiro[1][i] != getc(f)){
+                            break;
+                        } 
+                        if (i == strlen(parseiro[1]) - 1) {
+                            blocos_posicoes[indice_posicao] = conta_blocos;
+                            indice_posicao++;
+                            getc(f);
+                            int j = 0;
+                            while((c = getc(f)) != ' ' && c != '|') {
+                                bloco_mem[j] = c;
+                                j++;
+                            }
+                            bloco_mem[j] = '\0';
+                            if (strcmp(bloco_mem, "-1") == 0)
+                                blocos_posicoes[indice_posicao] = -1;
+                            else
+                                blocos_posicoes[indice_posicao] = atoi(bloco_mem);
+                            indice_posicao++;
+                            achou = 1;
+                        }
+                    }
+                }
+            }*/
 
             fclose(origem);
             fclose(f);
         }
 
         else if (strcmp(parseiro[0], "mkdir") == 0) {
+            FILE* f = fopen("simulacao/arquivo_simula", "r+");
             
+            while(getc(f) != '\n');
+            
+            int contador_blocos = 1;
+            int contador_blocos2;
+            while(getc(f) != '0')
+                contador_blocos++;
+            fseek(f, -1, SEEK_CUR);
+            fprintf(f, "1");
+
+            contador_blocos2 = contador_blocos;
+
+            while(getc(f) != '\n');
+            
+            while(contador_blocos > 1) {
+                while(getc(f) != '|');
+                contador_blocos--;
+            }
+
+            fprintf(f, "@/%s,0        .", parseiro[1]);
+            
+            for(int j = 0; j < 4096 - 12 - strlen(parseiro[1]); j++) {
+                fprintf(f, " ");
+            }
+            fprintf(f, "|");
+            
+            fseek(f, 21*(contador_blocos2-1), SEEK_SET);
+            fprintf(f, "@/%s,-1", parseiro[1]);
+
+            fclose(f);
         }
         
         else if (strcmp(parseiro[0], "rmdir") == 0) {
@@ -306,14 +438,34 @@ int main() {
             char aux;
             int contador_linha = 1;
             int contador_virgula = 0;
+            int tamanho_arquivo = -1;
+            char tamanho_char[6];
+            int aux_char = 0;
+            int flag_tamanho_arquivo = 0;
             for(int i = 0; i < indice_posicao - 1; i++) {
                 while(contador_linha != blocos_posicoes[i]) {
                     while(getc(f) != '|');
                     contador_linha++;
                 }
                 while((aux = getc(f)) != '|') {
-                    if (contador_virgula >= 2) //Mudar posteriormente para a quantidade de vírgulas referente aos metadados
-                        printf("%c", aux);
+                    if(contador_virgula == 1) {
+                        tamanho_char[aux_char] = aux;
+                        aux_char++;
+                    }
+                    if (contador_virgula >= 2) { //Mudar posteriormente para a quantidade de vírgulas referente aos metadados
+                        if(!flag_tamanho_arquivo && i == indice_posicao-2) {
+                            flag_tamanho_arquivo = 1;
+                            tamanho_char[aux_char] = '\0';
+                            tamanho_arquivo = atoi(tamanho_char);
+                            tamanho_arquivo = tamanho_arquivo % 4096;
+                        }
+                        if(i < indice_posicao - 2 || tamanho_arquivo > 0) {
+                            printf("%c", aux);
+                            tamanho_arquivo--;
+                        }
+                        else
+                            break;
+                    }
                     if (aux == ',')
                         contador_virgula++;
                 }
@@ -344,7 +496,12 @@ int main() {
                 contador_blocos--;
             }
 
-            fprintf(f, "%s,0,|", parseiro[1]);
+            fprintf(f, "%s,0,", parseiro[1]);
+
+            for(int j = 0; j < 4096 - 3 - strlen(parseiro[1]); j++) {
+                fprintf(f, " ");
+            }
+            fprintf(f, "|");
             
             fseek(f, 21*(contador_blocos2-1), SEEK_SET);
             fprintf(f, "%s,-1", parseiro[1]);
