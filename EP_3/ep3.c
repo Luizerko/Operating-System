@@ -34,6 +34,45 @@ char** parser(char* linha) {
     return parsed;
 }
 
+void mk_dir(char* parseiro) {
+    FILE* f = fopen("simulacao/arquivo_simula", "r+");
+            
+    while(getc(f) != '\n');
+    
+    int contador_blocos = 1;
+    int contador_blocos2;
+    while(getc(f) != '0')
+        contador_blocos++;
+    fseek(f, -1, SEEK_CUR);
+    fprintf(f, "1");
+
+    contador_blocos2 = contador_blocos;
+
+    while(getc(f) != '\n');
+    
+    while(contador_blocos > 1) {
+        while(getc(f) != '|');
+        contador_blocos--;
+    }
+    if(strcmp(parseiro, "/") == 0)
+        fprintf(f, "@%s,4096     .", parseiro);
+    else
+        fprintf(f, "@/%s/,4096     .", parseiro);
+    
+    for(int j = 0; j < 4096 - 12 - strlen(parseiro); j++) {
+        fprintf(f, " ");
+    }
+    fprintf(f, "|");
+    
+    fseek(f, 21*(contador_blocos2-1), SEEK_SET);
+    if(strcmp(parseiro, "/") == 0)
+        fprintf(f, "@%s,-1", parseiro);
+    else
+        fprintf(f, "@/%s/,-1", parseiro);
+
+    fclose(f);
+}
+
 int main() {
     strcpy(sistema_de_arquivos, "/home/lui/Documents/IME/2020.2/SO/SO_rep/EP_3/simulacao/arquivo_simula");
     while(1) {
@@ -61,12 +100,14 @@ int main() {
                     fprintf(f, "0");
                 }
                 fprintf(f, "\n");
+                
                 /*
                 for(int i = 0; i < 25600; i++) {
                     fprintf(f, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                \n");
                 }
                 */
                 fclose(f);
+                mk_dir("/");
             }
         }
 
@@ -237,99 +278,74 @@ int main() {
                 fprintf(f, "|");
             }
 
-            if(strlen(parseiro[2]) != 1) {
-                fseek(f, 0, SEEK_SET);
-                char aux2;
-                int conta_blocos = 1;
-                while((aux = getc(f)) != '\n') {
-                    if(aux == '|')
-                        conta_blocos++;
-                    if (aux == '@') {
-                        int k = 0;
-                        
-                        while((aux2 = getc(f)) != ',') {
-                            
-                            if (aux2 != parseiro[2][k]) {
-                                break;
-                            }
-                            k++;
-                        }
-                        if (aux2 == ',') {
+            fseek(f, 0, SEEK_SET);
+            char aux2;
+            int conta_blocos = 1;
+            while((aux = getc(f)) != '\n') {
+                if(aux == '|')
+                    conta_blocos++;
+                if (aux == '@') {
+                    int k = 0;
+                    char problemao[200];
+                    int indice_problemao = 0;
+                    
+                    while((aux2 = getc(f)) != ',') {
+                        problemao[indice_problemao] = aux2;
+                        indice_problemao++;
+
+                        if (aux2 != parseiro[2][k]) {
                             break;
                         }
+                        k++;
+                    }
+                    problemao[indice_problemao] = '\0';
+                    if (aux2 == ',' && strcmp(problemao, parseiro[2]) == 0) {
+                        break;
                     }
                 }
-                if(aux == '\n') {
-                    printf("Diretório inexistente!\n");
-                }
-
-                while(getc(f) != '\n');
-                while(getc(f) != '\n');
-                
-                while (conta_blocos > 1) {
-                    while (getc(f) != '|');
-                    conta_blocos--;
-                }
-                
-                while((aux = getc(f)) != ',');
-                char numero_string[10];
-                int indice_numero_string = 0;
-                long numero;
-                while((aux = getc(f)) != ' ' && aux != '.') {
-                    numero_string[indice_numero_string] = aux;
-                    indice_numero_string++;
-                }
-                numero_string[indice_numero_string] = '\0';
-                numero = atoi(numero_string);
-                numero += filesize;
-                fseek(f, -(indice_numero_string + 1), SEEK_CUR);
-                fprintf(f, "%ld", numero);
-
-                while((aux = getc(f)) != '.');
-                while((aux = getc(f)) != ' ');
-                fseek(f, -1, SEEK_CUR);
-                fprintf(f, "%s,%ld.", parseiro[1], filesize);
             }
+            if(aux == '\n') {
+                printf("Diretório inexistente!\n");
+            }
+
+            while(getc(f) != '\n');
+            while(getc(f) != '\n');
+            
+            while (conta_blocos > 1) {
+                while (getc(f) != '|');
+                conta_blocos--;
+            }
+            
+            /*
+            while((aux = getc(f)) != ',');
+            char numero_string[10];
+            int indice_numero_string = 0;
+            long numero;
+            while((aux = getc(f)) != ' ' && aux != '.') {
+                numero_string[indice_numero_string] = aux;
+                indice_numero_string++;
+            }
+            numero_string[indice_numero_string] = '\0';
+            numero = atoi(numero_string);
+            numero += filesize;
+            fseek(f, -(indice_numero_string + 1), SEEK_CUR);
+            fprintf(f, "%ld", numero);
+            */
+
+            while((aux = getc(f)) != '.');
+            while((aux = getc(f)) != ' ');
+            fseek(f, -1, SEEK_CUR);
+            fprintf(f, "%s,%ld.", parseiro[1], filesize);
 
             fclose(origem);
             fclose(f);
         }
 
         else if (strcmp(parseiro[0], "mkdir") == 0) {
-            FILE* f = fopen("simulacao/arquivo_simula", "r+");
-            
-            while(getc(f) != '\n');
-            
-            int contador_blocos = 1;
-            int contador_blocos2;
-            while(getc(f) != '0')
-                contador_blocos++;
-            fseek(f, -1, SEEK_CUR);
-            fprintf(f, "1");
-
-            contador_blocos2 = contador_blocos;
-
-            while(getc(f) != '\n');
-            
-            while(contador_blocos > 1) {
-                while(getc(f) != '|');
-                contador_blocos--;
-            }
-
-            fprintf(f, "@/%s,0        .", parseiro[1]);
-            
-            for(int j = 0; j < 4096 - 12 - strlen(parseiro[1]); j++) {
-                fprintf(f, " ");
-            }
-            fprintf(f, "|");
-            
-            fseek(f, 21*(contador_blocos2-1), SEEK_SET);
-            fprintf(f, "@/%s,-1", parseiro[1]);
-
-            fclose(f);
+            mk_dir(parseiro[1]);
         }
         
-        //falta
+        //Falta
         else if (strcmp(parseiro[0], "rmdir") == 0) {
             
         }
@@ -488,6 +504,7 @@ int main() {
 
         }
 
+        //Consertar
         else if (strcmp(parseiro[0], "rm") == 0) {
             int blocos_posicoes[25600], achou = 0;
             int indice_posicao = 0;
@@ -706,14 +723,80 @@ int main() {
             fclose(f);
         }
 
-        //falta
+        //Falta
         else if (strcmp(parseiro[0], "find") == 0) {
             
         }
 
-        //falta
         else if (strcmp(parseiro[0], "df") == 0) {
-            
+            FILE* f = fopen("simulacao/arquivo_simula", "r+");
+            int contador_arquivos = 0;
+            int contador_diretorios = 0;
+            int inicio_bloco[25600];
+            int indice_inicio_bloco = 0;
+            int blocos = 1;
+            char aux;
+            while((aux = getc(f)) != '\n') {
+                if(aux == '|')
+                    blocos++;
+                if(aux == '/') {
+                    while(getc(f) != ',');
+                    inicio_bloco[indice_inicio_bloco] = blocos;
+                    indice_inicio_bloco++;
+                    contador_arquivos++;
+                }
+                else if(aux == '@') {
+                    while(getc(f) != ',');
+                    contador_diretorios++;
+                }
+            }
+            printf("Quantidade de arquivos: %d\n", contador_arquivos);
+            printf("Quantidade de diretórios: %d\n", contador_diretorios);
+
+            int contador_espacos_vazios = 0;
+            while((aux = getc(f)) != '\n')
+                if(aux == '0')
+                    contador_espacos_vazios++;
+            printf("Espaço livre: %d\n", contador_espacos_vazios);
+
+            int contador_linha = 1;
+            int blocos_verificados = 0;
+            int espaco_desperdicado = 0;
+            while((aux = getc(f)) != EOF) {
+                if(blocos_verificados < indice_inicio_bloco && contador_linha == inicio_bloco[blocos_verificados]) {
+                    int conta_nome = 1;
+                    while((aux = getc(f)) != ',') {
+                        conta_nome++;
+                    }
+                    int j = 0;
+                    char bloco_mem[6];
+                    while((aux = getc(f)) != ',') {
+                        bloco_mem[j] = aux;
+                        j++;
+                    }
+                    conta_nome += (j + 2);
+                    bloco_mem[j] = '\0';
+                    espaco_desperdicado += 4096 - (atoi(bloco_mem) + conta_nome) % 4096;
+                    blocos_verificados++;
+                }
+                else if(aux == '@') {
+                    int desperdicio_diretorio = 1;
+                    while((aux = getc(f)) != '|') {
+                        if(aux == '.')
+                            if(getc(f) == ' ') {
+                                desperdicio_diretorio++;
+                                espaco_desperdicado += 4096 - desperdicio_diretorio;
+                            }
+                        desperdicio_diretorio++;
+                    }
+                }
+                if(aux == '|')
+                    contador_linha++;
+            }
+            printf("Espaço desperdiçado: %d\n", espaco_desperdicado);
+
+            fclose(f);
+
         }
 
         else if (strcmp(parseiro[0], "umount") == 0) {
