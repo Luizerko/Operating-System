@@ -73,6 +73,326 @@ void mk_dir(char* parseiro) {
     fclose(f);
 }
 
+void rm(char* parseiro) {
+    int blocos_posicoes[25600], achou = 0;
+    int indice_posicao = 0;
+    FILE* f = fopen("simulacao/arquivo_simula", "r+");
+    char c;
+    char bloco_mem[6];
+    int conta_blocos = 1;
+    while((c = getc(f)) != '\n') {
+        if(c == '|')
+            conta_blocos++;
+        if(c == parseiro[0]) {
+            for(int i = 1; i < strlen(parseiro); i++) {
+                if(parseiro[i] != getc(f)){
+                    break;
+                } 
+                if (i == strlen(parseiro) - 1 && getc(f) == ',') { // e se o nome for igual e tiver coisa dps? tipo teste1 e teste11.
+                    fseek(f, -1, SEEK_CUR);
+                    blocos_posicoes[indice_posicao] = conta_blocos;
+                    indice_posicao++;
+                    getc(f);
+                    int j = 0;
+                    while((c = getc(f)) != ' ' && c != '|') {
+                        bloco_mem[j] = c;
+                        j++;
+                    }
+                    bloco_mem[j] = '\0';
+                    fseek(f, -j - 2 - strlen(parseiro), SEEK_CUR);
+                    fprintf(f, "0                   ");
+                    if (strcmp(bloco_mem, "-1") == 0)
+                        blocos_posicoes[indice_posicao] = -1;
+                    else
+                        blocos_posicoes[indice_posicao] = atoi(bloco_mem);
+                    indice_posicao++;
+                    achou = 1;
+                }
+            }
+        }
+        
+        if(achou && blocos_posicoes[1] != -1) {
+
+            fseek(f, 21*(blocos_posicoes[0]), SEEK_SET);
+
+            int j = 0;
+            while((c = getc(f)) != ' ' && c != '|') {
+                bloco_mem[j] = c;
+                j++;
+            }
+            bloco_mem[j] = '\0';
+            fseek(f, -j - 1, SEEK_CUR);
+            fprintf(f, "0                   ");
+            //lemrbar que o bloco posicao ja ta erado aqui, se pa o blocomem ta dando merda. checar dps.
+            if (strcmp(bloco_mem, "-1") == 0)
+                blocos_posicoes[indice_posicao] = -1;
+            else
+                blocos_posicoes[indice_posicao] = atoi(bloco_mem);
+            indice_posicao++;
+            while(getc(f) != '|');
+
+            while(blocos_posicoes[indice_posicao-1] != -1) {
+                fseek(f, 21*blocos_posicoes[indice_posicao-1], SEEK_SET);
+                int j = 0;
+                while((c = getc(f)) != ' ' && c != '|') {
+                    bloco_mem[j] = c;
+                    j++;
+                }
+                bloco_mem[j] = '\0';
+                fseek(f, -j - 1, SEEK_CUR);
+                fprintf(f, "0                   ");
+                if (strcmp(bloco_mem, "-1") == 0)
+                    blocos_posicoes[indice_posicao] = -1;
+                else
+                    blocos_posicoes[indice_posicao] = atoi(bloco_mem);
+                indice_posicao++;
+            }
+            break;
+        }
+        
+        else if (achou) 
+            break;
+    }
+
+    while(getc(f) != '\n');
+
+    int indice_aux = 0;
+    int conta_bitmap = 1;
+    while(getc(f) != '\n') {
+        if(indice_aux < indice_posicao && blocos_posicoes[indice_aux] == conta_bitmap) {
+            fseek(f, -1, SEEK_CUR);
+            fprintf(f, "0");
+            indice_aux++;
+        }
+        conta_bitmap++;
+    }
+    
+    int contador_linha = 1;
+    for(int i = 0; i < indice_posicao - 1; i++) {
+        while(contador_linha != blocos_posicoes[i]) {
+            while(getc(f) != '|');
+            contador_linha++;
+        }
+        fprintf(f, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ");
+        contador_linha++;
+    }
+
+    char dir[200];
+    char nome_remocao[200];
+    int indice_nome_remocao = 0;
+    int indice_dir = 0;
+    int indice_pasta;
+    for(int i = 0; i < strlen(parseiro); i++) {
+        if(parseiro[i] == '/') {
+            indice_pasta = i;
+            indice_nome_remocao = 0;
+        }
+        nome_remocao[indice_nome_remocao] = parseiro[i];
+        indice_nome_remocao++;
+    }
+
+    nome_remocao[indice_nome_remocao] = '\0';
+    
+    if(indice_pasta == 0) {
+        dir[0] = '/';
+        dir[1] = '\0';
+        indice_dir = 1;
+    }
+    else {
+        for(int i = 0; i < indice_pasta; i++) {
+            if(parseiro[i] == '/')
+                indice_dir = 0;
+            dir[indice_dir] = parseiro[i];
+            indice_dir++;
+        }
+        dir[indice_dir] = '/';
+        indice_dir++;
+        dir[indice_dir] = '\0';
+    }
+
+    fseek(f, 0, SEEK_SET);
+    
+    char aux;
+    char aux2;
+    conta_blocos = 1;
+    while((aux = getc(f)) != '\n') {
+        if(aux == '|')
+            conta_blocos++;
+        if (aux == '@') {
+            int k = 0;
+            
+            while((aux2 = getc(f)) != ',') {
+                
+                if (aux2 != dir[k]) {
+                    break;
+                }
+                k++;
+            }
+            if (aux2 == ',' && k == strlen(dir)) {
+                break;
+            }
+        }
+    }
+
+    while(getc(f) != '\n');
+    while(getc(f) != '\n');
+    
+    while(conta_blocos > 1) {
+            while(getc(f) != '|');
+            conta_blocos--;
+    }
+
+    char auxiliar_palavra_remocao[200];
+    char aux3[4096];
+    int indice_aux3 = 0;
+    int indice_auxiliar_palavra_remocao = 0;
+    int aux4 = 1;
+    while(1) {
+        indice_auxiliar_palavra_remocao = 0;
+        aux4 = 1;
+        while(getc(f) != '.');
+        
+        while((aux2 = getc(f)) != ',') {
+            auxiliar_palavra_remocao[indice_auxiliar_palavra_remocao] = aux2;
+            indice_auxiliar_palavra_remocao++;
+        }
+        auxiliar_palavra_remocao[indice_auxiliar_palavra_remocao] = '\0';
+
+        while(getc(f) != '.')
+            aux4++;
+        aux4++;
+        
+        if(strcmp(auxiliar_palavra_remocao, nome_remocao) == 0) {
+            while((aux2 = getc(f)) != ' ') {
+                aux3[indice_aux3] = aux2;
+                indice_aux3++;
+            } 
+            aux3[indice_aux3] = '\0';
+            fseek(f, -(indice_aux3 + indice_auxiliar_palavra_remocao + aux4 + 1), SEEK_CUR);
+            fprintf(f, "%s", aux3);
+            while((aux2 = getc(f)) != '|' && aux2 != ' ') {
+                fseek(f, -1, SEEK_CUR);
+                fprintf(f, " ");
+            }
+            break;
+        }
+
+    }
+
+    fclose(f);
+}
+
+void ls(char* parseiro) {
+    FILE* f = fopen("simulacao/arquivo_simula", "r+");
+    char aux;
+    int conta_blocos;
+    if(strlen(parseiro) != 1) {
+        fseek(f, 0, SEEK_SET);
+        char aux2;
+        conta_blocos = 1;
+        while((aux = getc(f)) != '\n') {
+            if(aux == '|')
+                conta_blocos++;
+            if (aux == '@') {
+                int k = 0;
+                
+                while((aux2 = getc(f)) != ',') {
+                    
+                    if (aux2 != parseiro[k]) {
+                        break;
+                    }
+                    k++;
+                }
+                //mudar mudar mudar STOP THE COUNT.
+                if (aux2 == ','  && k == strlen(parseiro)) {
+                    break;
+                }
+            }
+        }
+
+        while(getc(f) != '\n');
+        while(getc(f) != '\n');
+
+        char palavra[200];
+        int ind_palavra = 0;
+        while(conta_blocos > 1) {
+            while(getc(f) != '|');
+            conta_blocos--;
+        }
+        
+        while(getc(f) != '.');
+        int flag_break = 0;
+        while(1) {
+            if (flag_break)
+                break;
+            while((aux = getc(f)) != '.') {
+                palavra[ind_palavra] = aux;
+                ind_palavra++;
+                if (aux == ' ' || aux == '|') {
+                    flag_break = 1;
+                    break;
+                }
+
+            }
+            palavra[ind_palavra] = '\0';
+            ind_palavra = 0;
+            printf("%s \n", palavra);
+        }
+    }
+
+    else {
+        while((aux = getc(f)) != '\n');
+        while((aux = getc(f)) != '\n');
+        
+        while((aux = getc(f)) != EOF) {
+            fseek(f, -1, SEEK_CUR);
+            while((aux = getc(f)) != EOF && aux != '/');
+            if(aux == EOF)
+                break;
+            fseek(f, -1, SEEK_CUR);
+            char palavra[200];
+            int indice_palavra = 0;
+            int numero_barra = 0;
+            while((aux = getc(f)) != EOF && aux != ',') {
+                palavra[indice_palavra] = aux;
+                indice_palavra++;
+                
+                if(aux == '/')
+                    numero_barra++;
+            }
+            if(aux == EOF)
+                break;
+
+            if(numero_barra >= 2)
+                continue;
+            
+            palavra[indice_palavra] = '\0';
+            indice_palavra++;
+
+            printf("%s,", palavra);
+
+            indice_palavra = 0;
+
+            while((aux = getc(f)) != EOF && aux != ',' && aux != '.') {
+                palavra[indice_palavra] = aux;
+                indice_palavra++;
+            }
+            if(aux == EOF)
+                break;
+
+            palavra[indice_palavra] = '\0';
+            indice_palavra++;
+
+            printf("%s\n", palavra);
+            
+            while((aux = getc(f)) != EOF && aux != '|');
+        }
+        
+    }
+    
+    fclose(f);
+}
+
 int main() {
     strcpy(sistema_de_arquivos, "/home/lui/Documents/IME/2020.2/SO/SO_rep/EP_3/simulacao/arquivo_simula");
     while(1) {
@@ -341,6 +661,7 @@ int main() {
             fclose(f);
         }
 
+        //Verificar se pasta dentro de pasta funciona
         else if (strcmp(parseiro[0], "mkdir") == 0) {
             mk_dir(parseiro[1]);
         }
@@ -504,223 +825,12 @@ int main() {
 
         }
 
-        //Consertar
         else if (strcmp(parseiro[0], "rm") == 0) {
-            int blocos_posicoes[25600], achou = 0;
-            int indice_posicao = 0;
-            FILE* f = fopen("simulacao/arquivo_simula", "r+");
-            char c;
-            char bloco_mem[6];
-            int conta_blocos = 1;
-            while((c = getc(f)) != '\n') {
-                if(c == '|')
-                    conta_blocos++;
-                if(c == parseiro[1][0]) {
-                    for(int i = 1; i < strlen(parseiro[1]); i++) {
-                        if(parseiro[1][i] != getc(f)){
-                            break;
-                        } 
-                        if (i == strlen(parseiro[1]) - 1 && getc(f) == ',') { // e se o nome for igual e tiver coisa dps? tipo teste1 e teste11.
-                            fseek(f, -1, SEEK_CUR);
-                            blocos_posicoes[indice_posicao] = conta_blocos;
-                            indice_posicao++;
-                            getc(f);
-                            int j = 0;
-                            while((c = getc(f)) != ' ' && c != '|') {
-                                bloco_mem[j] = c;
-                                j++;
-                            }
-                            bloco_mem[j] = '\0';
-                            fseek(f, -j - 2 - strlen(parseiro[1]), SEEK_CUR);
-                            fprintf(f, "0                   ");
-                            if (strcmp(bloco_mem, "-1") == 0)
-                                blocos_posicoes[indice_posicao] = -1;
-                            else
-                                blocos_posicoes[indice_posicao] = atoi(bloco_mem);
-                            indice_posicao++;
-                            achou = 1;
-                        }
-                    }
-                }
-                
-                if(achou && blocos_posicoes[1] != -1) {
-
-                    fseek(f, 21*(blocos_posicoes[0]), SEEK_SET);
-
-                    int j = 0;
-                    while((c = getc(f)) != ' ' && c != '|') {
-                        bloco_mem[j] = c;
-                        j++;
-                    }
-                    bloco_mem[j] = '\0';
-                    fseek(f, -j - 1, SEEK_CUR);
-                    fprintf(f, "0                   ");
-                    //lemrbar que o bloco posicao ja ta erado aqui, se pa o blocomem ta dando merda. checar dps.
-                    if (strcmp(bloco_mem, "-1") == 0)
-                        blocos_posicoes[indice_posicao] = -1;
-                    else
-                        blocos_posicoes[indice_posicao] = atoi(bloco_mem);
-                    indice_posicao++;
-                    while(getc(f) != '|');
-
-                    while(blocos_posicoes[indice_posicao-1] != -1) {
-                        fseek(f, 21*blocos_posicoes[indice_posicao-1], SEEK_SET);
-                        int j = 0;
-                        while((c = getc(f)) != ' ' && c != '|') {
-                            bloco_mem[j] = c;
-                            j++;
-                        }
-                        bloco_mem[j] = '\0';
-                        fseek(f, -j - 1, SEEK_CUR);
-                        fprintf(f, "0                   ");
-                        if (strcmp(bloco_mem, "-1") == 0)
-                            blocos_posicoes[indice_posicao] = -1;
-                        else
-                            blocos_posicoes[indice_posicao] = atoi(bloco_mem);
-                        indice_posicao++;
-                    }
-                    break;
-                }
-                
-                else if (achou) 
-                    break;
-            }
-
-            while(getc(f) != '\n');
-
-            int indice_aux = 0;
-            int conta_bitmap = 1;
-            while(getc(f) != '\n') {
-                if(indice_aux < indice_posicao && blocos_posicoes[indice_aux] == conta_bitmap) {
-                    fseek(f, -1, SEEK_CUR);
-                    fprintf(f, "0");
-                    indice_aux++;
-                }
-                conta_bitmap++;
-            }
-            
-            int contador_linha = 1;
-            for(int i = 0; i < indice_posicao - 1; i++) {
-                while(contador_linha != blocos_posicoes[i]) {
-                    while(getc(f) != '|');
-                    contador_linha++;
-                }
-                fprintf(f, "                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                ");
-                contador_linha++;
-            }
-
-            fclose(f);
-
+            rm(parseiro[1])
         }
 
         else if (strcmp(parseiro[0], "ls") == 0) {
-            FILE* f = fopen("simulacao/arquivo_simula", "r+");
-            char aux;
-            int conta_blocos;
-            if(strlen(parseiro[1]) != 1) {
-                fseek(f, 0, SEEK_SET);
-                char aux2;
-                conta_blocos = 1;
-                while((aux = getc(f)) != '\n') {
-                    if(aux == '|')
-                        conta_blocos++;
-                    if (aux == '@') {
-                        int k = 0;
-                        
-                        while((aux2 = getc(f)) != ',') {
-                            
-                            if (aux2 != parseiro[1][k]) {
-                                break;
-                            }
-                            k++;
-                        }
-                        if (aux2 == ',') {
-                            break;
-                        }
-                    }
-                }
-
-                while(getc(f) != '\n');
-                while(getc(f) != '\n');
-
-                char palavra[200];
-                int ind_palavra = 0;
-                while(conta_blocos > 1) {
-                    while(getc(f) != '|');
-                    conta_blocos--;
-                }
-                
-                while(getc(f) != '.');
-                int flag_break = 0;
-                while(1) {
-                    if (flag_break)
-                        break;
-                    while((aux = getc(f)) != '.') {
-                        palavra[ind_palavra] = aux;
-                        ind_palavra++;
-                        if (aux == ' ' || aux == '|') {
-                            flag_break = 1;
-                            break;
-                        }
-
-                    }
-                    palavra[ind_palavra] = '\0';
-                    ind_palavra = 0;
-                    printf("%s \n", palavra);
-                }
-            }
-
-            else {
-                while((aux = getc(f)) != '\n');
-                while((aux = getc(f)) != '\n');
-                
-                while((aux = getc(f)) != EOF) {
-                    fseek(f, -1, SEEK_CUR);
-                    while((aux = getc(f)) != EOF && aux != '/');
-                    if(aux == EOF)
-                        break;
-                    fseek(f, -1, SEEK_CUR);
-                    char palavra[200];
-                    int indice_palavra = 0;
-                    int numero_barra = 0;
-                    while((aux = getc(f)) != EOF && aux != ',') {
-                        palavra[indice_palavra] = aux;
-                        indice_palavra++;
-                        
-                        if(aux == '/')
-                            numero_barra++;
-                    }
-                    if(aux == EOF)
-                        break;
-
-                    if(numero_barra >= 2)
-                        continue;
-                    
-                    palavra[indice_palavra] = '\0';
-                    indice_palavra++;
-
-                    printf("%s,", palavra);
-
-                    indice_palavra = 0;
-
-                    while((aux = getc(f)) != EOF && aux != ',' && aux != '.') {
-                        palavra[indice_palavra] = aux;
-                        indice_palavra++;
-                    }
-                    if(aux == EOF)
-                        break;
-
-                    palavra[indice_palavra] = '\0';
-                    indice_palavra++;
-
-                    printf("%s\n", palavra);
-                    
-                    while((aux = getc(f)) != EOF && aux != '|');
-                }
-                
-            }
-            
-            fclose(f);
+            ls(parseiro[1]);
         }
 
         //Falta
