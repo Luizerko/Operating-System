@@ -7,13 +7,14 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <math.h>
+#include <time.h>
 
 
 #define MAX_CARACTER 80
 #define MAX_PALAVRAS 10
 #define MAX_TAMANHO_PALAVRA 20
 
-char sistema_de_arquivos[200];
+char sistema_de_arquivos[500];
 
 char** parser(char* linha) {
     char** parsed = malloc(MAX_PALAVRAS*sizeof(char*));
@@ -34,15 +35,56 @@ char** parser(char* linha) {
     return parsed;
 }
 
+char* pega_tempo() {
+    char* tempo = malloc(200*sizeof(char));
+    int indice_tempo = 0;
+    time_t rawtime;
+    struct tm * timeinfo;
+    time (&rawtime);
+    timeinfo = localtime(&rawtime);
+    char* aux_string = asctime(timeinfo);
+
+    for(int i = 4; i < strlen(aux_string)-1; i++) {
+        if(i == 4) {
+            tempo[indice_tempo] = aux_string[i] + 32;
+            indice_tempo++;
+        }
+        else {
+            if(aux_string[i] == ' ') {
+                if(aux_string[i-1] != ' ') {
+                    tempo[indice_tempo] = '-';
+                    indice_tempo++;
+                }
+            }
+            else {
+                tempo[indice_tempo] = aux_string[i];
+                indice_tempo++;
+            }
+        }
+    }
+    tempo[indice_tempo] = '\0';
+    
+    if(tempo[5] == '-') {
+        for(int i = strlen(tempo) - 1; i >= 4; i--) {
+            tempo[i+1] = tempo[i];
+            if(i == 4)
+                tempo[i] = '0';
+        }
+        tempo[indice_tempo+1] = '\0';
+    }
+    
+    return tempo;
+}
+
+
 void mk_dir(char* parseiro) {
-    FILE* f = fopen("simulacao/arquivo_simula", "r+");
+    FILE* f = fopen(sistema_de_arquivos, "r+");
 
     char parseiro_auxiliar[200];
     int parseiro_aux = 0;
-    int barra_frente = 0, barra_tras = 0;
+    int barra_frente = 0;
     for(int i = 0; i < strlen(parseiro); i++) {
         if(parseiro[i] == '/') {
-            barra_tras = barra_frente;
             barra_frente = i;
         }
     }
@@ -52,7 +94,7 @@ void mk_dir(char* parseiro) {
         parseiro_aux = 1;
     }
     else {
-        for(int i = barra_tras; i < barra_frente; i++) {
+        for(int i = 0; i < barra_frente; i++) {
             parseiro_auxiliar[parseiro_aux] = parseiro[i];
             parseiro_aux++;
         }
@@ -80,14 +122,22 @@ void mk_dir(char* parseiro) {
         while(getc(f) != '|');
         contador_blocos--;
     }
-    if(strcmp(parseiro, "/") == 0)
-        fprintf(f, "@%s,4096     .", parseiro);
-    else
-        fprintf(f, "@%s/,4096     .", parseiro);
-    
-    for(int j = 0; j < 4096 - 12 - strlen(parseiro); j++) {
-        fprintf(f, " ");
+    char* tempo = pega_tempo();
+    if(strcmp(parseiro, "/") == 0) {
+        fprintf(f, "@%s,4096     ,%s,%s,%s.", parseiro, tempo, tempo, tempo);  
+          
+        for(int j = 0; j < 4096 - 15 - strlen(parseiro) - (3*strlen(tempo)); j++) {
+            fprintf(f, " ");
+        }
     }
+    else {
+        fprintf(f, "@%s/,4096     ,%s,%s,%s.", parseiro, tempo, tempo, tempo);
+
+        for(int j = 0; j < 4096 - 16 - strlen(parseiro) - (3*strlen(tempo)); j++) {
+            fprintf(f, " ");
+        }
+    }
+
     fprintf(f, "|");
     
     fseek(f, 21*(contador_blocos2-1), SEEK_SET);
@@ -147,7 +197,7 @@ void mk_dir(char* parseiro) {
         }
         parseiro_auxiliar[parseiro_aux] = '\0';
 
-        fprintf(f, "@%s/,4096     .", parseiro_auxiliar);
+        fprintf(f, "@%s/,4096     ,%s,%s,%s.", parseiro_auxiliar, tempo, tempo, tempo);
     }
 
     fclose(f);
@@ -156,7 +206,7 @@ void mk_dir(char* parseiro) {
 void rm(char* parseiro) {
     int blocos_posicoes[25600], achou = 0;
     int indice_posicao = 0;
-    FILE* f = fopen("simulacao/arquivo_simula", "r+");
+    FILE* f = fopen(sistema_de_arquivos, "r+");
     char c;
     char bloco_mem[6];
     int conta_blocos = 1;
@@ -181,6 +231,7 @@ void rm(char* parseiro) {
                     bloco_mem[j] = '\0';
                     fseek(f, -j - 2 - strlen(parseiro), SEEK_CUR);
                     fprintf(f, "0                   ");
+                    //printf("cheguei a achar e printei la\n");
                     if (strcmp(bloco_mem, "-1") == 0)
                         blocos_posicoes[indice_posicao] = -1;
                     else
@@ -315,8 +366,8 @@ void rm(char* parseiro) {
 
         else {
             for(int i = 1; i < indice_pasta; i++) {
-                if(parseiro[i] == '/')
-                    indice_dir = 0;
+                /*if(parseiro[i] == '/')
+                    indice_dir = 0;*/
                 dir[indice_dir] = parseiro[i];
                 indice_dir++;
             }
@@ -327,8 +378,6 @@ void rm(char* parseiro) {
     }
 
     fseek(f, 0, SEEK_SET);
-    
-    printf("%s\n", dir);
 
     char aux;
     char aux2;
@@ -354,8 +403,6 @@ void rm(char* parseiro) {
 
     while(getc(f) != '\n');
     while(getc(f) != '\n');
-    
-    //printf("estou preso aqui?\n");
 
     char auxiliar_palavra_remocao[200];
     char aux3[4096];
@@ -372,12 +419,11 @@ void rm(char* parseiro) {
         nome_remocao[strlen(string)] = '\0';
     }
 
-    //printf("%s\n", string);
-
+    while(getc(f) != '.');
     while(1) {
         indice_auxiliar_palavra_remocao = 0;
         aux4 = 1;
-        while(getc(f) != '.');
+        //while(getc(f) != '.');
         
         while((aux2 = getc(f)) != ',') {
             auxiliar_palavra_remocao[indice_auxiliar_palavra_remocao] = aux2;
@@ -389,23 +435,30 @@ void rm(char* parseiro) {
             aux4++;
         aux4++;
         
+        // /lalala,123./teste,21332./lelele,240./tes2,232.
+
         if(strcmp(auxiliar_palavra_remocao, nome_remocao) == 0) {//aqaui???
             while((aux2 = getc(f)) != ' ') {
+                fseek(f, -1, SEEK_CUR);
+                while((aux2 = getc(f)) != '.' ) {
+                    aux3[indice_aux3] = aux2;
+                    indice_aux3++;
+                }
                 aux3[indice_aux3] = aux2;
                 indice_aux3++;
-            } 
+            }
             aux3[indice_aux3] = '\0';
             fseek(f, -(indice_aux3 + indice_auxiliar_palavra_remocao + aux4 + 1), SEEK_CUR);
             fprintf(f, "%s", aux3);
             if(parseiro[0] != '@') {
-                while((aux2 = getc(f)) != '|' && aux2 != ' ') {
+                while((aux2 = getc(f)) != '|') {
                     fseek(f, -1, SEEK_CUR);
                     fprintf(f, " ");
                 }
                 break;
             }
             else {
-                while((aux2 = getc(f)) != '|' /*&& aux2 != ' '*/) {
+                while((aux2 = getc(f)) != '|') {
                     fseek(f, -1, SEEK_CUR);
                     fprintf(f, " ");
                 }
@@ -419,7 +472,7 @@ void rm(char* parseiro) {
 }
 
 void ls(char* parseiro) {
-    FILE* f = fopen("simulacao/arquivo_simula", "r+");
+    FILE* f = fopen(sistema_de_arquivos, "r+");
     char aux;
     int conta_blocos;
     if(strlen(parseiro) != 1) {
@@ -493,27 +546,21 @@ void ls(char* parseiro) {
     else {
         while((aux = getc(f)) != '\n');
         while((aux = getc(f)) != '\n');
-        //while((aux = getc(f)) != EOF && aux != '.' && aux != '|');
-        //fseek(f, -1, SEEK_CUR);
+
+        while((aux = getc(f)) != EOF && aux != '.' && aux != '|');
         while((aux = getc(f)) != EOF && aux != '|') {
             fseek(f, -1, SEEK_CUR);
-            while((aux = getc(f)) != EOF && aux != '.' && aux != '|');
             if(aux == EOF || aux == '|')
                 break;
             char palavra[200];
             int indice_palavra = 0;
-            //int numero_barra = 0;
             while((aux = getc(f)) != EOF && aux != ' ' && aux != '|' && aux != '.') {
                 palavra[indice_palavra] = aux;
                 indice_palavra++;
                 
-               /* if(aux == '/')
-                    numero_barra++;*/
             }
             if(aux == EOF || aux == '|')
                 break;
-            /*if(numero_barra >= 2)
-                continue;*/
             
             palavra[indice_palavra] = '\0';
             indice_palavra++;
@@ -535,7 +582,7 @@ void ls(char* parseiro) {
 }
 
 void find_me(char* diretorio, char* arquivo) {
-    FILE* f = fopen("simulacao/arquivo_simula", "r+");
+    FILE* f = fopen(sistema_de_arquivos, "r+");
 
     char aux;
     char path_auxiliar[200], arquivo_auxiliar[200];
@@ -570,7 +617,7 @@ void find_me(char* diretorio, char* arquivo) {
 }
 
 void rm_dir(char* parseiro) {
-    FILE* f = fopen("simulacao/arquivo_simula", "r+");
+    FILE* f = fopen(sistema_de_arquivos, "r+");
     
     char aux, aux2;
     int conta_blocos = 1;
@@ -634,11 +681,26 @@ void rm_dir(char* parseiro) {
             }
             apagando[indice_apagando+1] = '\0';
             apagando[0] = '/';*/
-            fclose(f);
-            rm_dir(apagando);
+            //fclose(f);
+            char string3[200];
+            string3[0] = '@';
+            strcpy(string3, parseiro);
+            string3[strlen(parseiro) - 1] = '\0';
+            strcat(string3, apagando);
+            printf("apaGAnDO: %s\n", string3);
+            rm_dir(string3);
+            printf("apagay: %s\n", string3);
+
         }
-        else
-            rm(apagando);
+        else {
+            char string2[200];
+            strcpy(string2, parseiro);
+            string2[strlen(parseiro) - 1] = '\0';
+            strcat(string2, apagando);
+            printf("apagando: %s\n", string2);
+            rm(string2);
+            printf("apagay: %s\n", string2);
+        }
     }
     
     char string[200];
@@ -646,9 +708,9 @@ void rm_dir(char* parseiro) {
     string[1] = '\0';
     strcat(string, parseiro);
 
-    printf("%s\n", string);
-
+    printf("apagando: %s\n", string);
     rm(string);
+    printf("apagay: %s\n", string);
     fclose(f);
 }
 
@@ -661,14 +723,12 @@ int main() {
         char** parseiro = parser(linha);
 
         if (strcmp(parseiro[0], "mount") == 0) {
-            /* LEMBRAR DE TROCAR PRA ISSO DEPOIS
             for(int i = 0; i < strlen(parseiro[1]); i++) {
                 sistema_de_arquivos[i] = parseiro[1][i];
             }
             sistema_de_arquivos[strlen(parseiro[1])] = '\0';
-            */
-            if(access("simulacao/arquivo_simula", F_OK) == -1) {
-                FILE* f = fopen("simulacao/arquivo_simula"/*parseiro[1]*/, "a+"); //lembrar de trocar por parseiro[1].
+            if(access(sistema_de_arquivos, F_OK) == -1) {
+                FILE* f = fopen(sistema_de_arquivos, "a+"); //lembrar de trocar por parseiro[1].
                 //FAT começa a contar da posição 1, ou seja, a primeira posição do FAT indica linha 1 e não linha 0. Caso tenha um valor 0 numa posição do FAT, significa que essa posição está vazia.
                 for(int i = 0; i < 25600; i++) {
                     fprintf(f, "0                   |");
@@ -690,22 +750,26 @@ int main() {
             }
         }
 
+        //cp "path_do_arquivo" "path_da_pasta"
+        //cp /teste /lalala/ (copia o arquivo "teste" que está em "/" para "/lalala/")
         else if (strcmp(parseiro[0], "cp") == 0) {
             
-            FILE* f = fopen("simulacao/arquivo_simula", "a+");
+            FILE* f = fopen(sistema_de_arquivos, "a+");
 
             struct stat finfo;
             fstat(open(parseiro[1], O_RDONLY), &finfo);
             off_t filesize = finfo.st_size;
             fclose(f);
-
+            
+            char* tempo = pega_tempo();
+            
             int posicao_blocos_ocupados = 0;
             int blocos_ocupados[25600];
 
             long int blocos = (long int)ceil((float)filesize/(float)4096);
             //printf("%ld\n", blocos);
 
-            f = fopen("simulacao/arquivo_simula", "r+");
+            f = fopen(sistema_de_arquivos, "r+");
             char memoria[21];
             int indice = 0;
             int insercao_anterior = 0;
@@ -740,7 +804,7 @@ int main() {
 
                         fseek(f, insercao + 1, SEEK_SET);
                         if(insercao_anterior == 0)
-                            insercao_anterior = insercao - 21 + strlen(parseiro[1]) + 1;
+                            insercao_anterior = insercao - 21 + strlen(parseiro[1]) + strlen(parseiro[2]) - 1 + 1;
                         else
                             insercao_anterior = insercao - 21 + 1;
                         blocos--;
@@ -763,7 +827,7 @@ int main() {
             }
             fclose(f);
             
-            f = fopen("simulacao/arquivo_simula", "r+");
+            f = fopen(sistema_de_arquivos, "r+");
             int contador_de_linha = -1;
             FILE* origem = fopen(parseiro[1], "r");
             char bloco[4097], aux;
@@ -815,7 +879,7 @@ int main() {
             strcat(parseiro_auxiliar, aux_ind);
 
             int tamanho_file = filesize/10;
-            fprintf(f, "%s,%ld,", parseiro_auxiliar, filesize);
+            fprintf(f, "%s,%ld,%s,%s,%s", parseiro_auxiliar, filesize, tempo, tempo, tempo);
             int tamanho_meta = strlen(parseiro_auxiliar) + tamanho_file;
             int block_size = 4096;
             int indice_bloco = 1;
@@ -915,24 +979,30 @@ int main() {
             while((aux = getc(f)) == '@' || aux == '/')
                 while(getc(f) != '.');
             fseek(f, -1, SEEK_CUR);
-            fprintf(f, "%s,%ld.", parseiro[1], filesize);
+            fprintf(f, "%s,%ld,%s,%s,%s.", parseiro[1], filesize, tempo, tempo, tempo);
 
             fclose(origem);
             fclose(f);
         }
 
+        //mkdir "path_da_pasta_nova"
+        //mkdir /lalala (cria uma pasta nova "lalala" no path raiz "/")
         else if (strcmp(parseiro[0], "mkdir") == 0) {
             mk_dir(parseiro[1]);
         }
         
+        //rmdir "path_da_pasta"
+        //rmdir /lalala/ (remove a pasta "lalala/" e tudo que está dentro dela do path raiz "/")
         else if (strcmp(parseiro[0], "rmdir") == 0) {
             rm_dir(parseiro[1]);
         }
 
+        //cat "path_do_arquivo"
+        //cat /lalala/teste (lê o arquivo "teste" que está no path raiz "/lalala/")
         else if (strcmp(parseiro[0], "cat") == 0) {
             int blocos_posicoes[25600], achou = 0;
             int indice_posicao = 0;
-            FILE* f = fopen("simulacao/arquivo_simula", "r+");
+            FILE* f = fopen(sistema_de_arquivos, "r+");
             char c;
             char bloco_mem[6];
             int conta_blocos = 1;
@@ -1048,55 +1118,101 @@ int main() {
             fclose(f);
         }
 
+        //touch "path_do_arquivo"
+        //touch /lalala/teste (cria um arquivo vazio "teste" no path raiz "/lalala/")
         else if (strcmp(parseiro[0], "touch") == 0) {
-            FILE* f = fopen("simulacao/arquivo_simula", "r+");
+            FILE* f = fopen(sistema_de_arquivos, "r+");
             
-            while(getc(f) != '\n');
-            
-            int contador_blocos = 1;
-            int contador_blocos2;
-            while(getc(f) != '0')
-                contador_blocos++;
-            fseek(f, -1, SEEK_CUR);
-            fprintf(f, "1");
+            char arquivo[200];
+            int indice_arquivo = 0;
+            char aux;
+            int conta_blocos = 1;
+            int flag_criacao = 0;
+            while((aux = getc(f)) != '\n') {
+                if(aux == '|') {
+                    conta_blocos++;
+                    indice_arquivo = 0;
+                    while((aux = getc(f)) != ',') {
+                        arquivo[indice_arquivo] = aux;
+                        indice_arquivo++;
+                    }
+                    arquivo[indice_arquivo] = '\0';
+                    if(strcmp(arquivo, parseiro[1]) == 0) {
+                        flag_criacao = 1;
+                        break;
+                    }
+                }
+            }
+            if(aux != '\n')
+                while((aux = getc(f)) != '\n');
 
-            contador_blocos2 = contador_blocos;
+            if(!flag_criacao) {
+                int contador_blocos = 1;
+                int contador_blocos2;
+                while(getc(f) != '0')
+                    contador_blocos++;
+                fseek(f, -1, SEEK_CUR);
+                fprintf(f, "1");
 
-            while(getc(f) != '\n');
-            
-            while(contador_blocos > 1) {
-                while(getc(f) != '|');
-                contador_blocos--;
+                contador_blocos2 = contador_blocos;
+
+                while(getc(f) != '\n');
+                
+                while(contador_blocos > 1) {
+                    while(getc(f) != '|');
+                    contador_blocos--;
+                }
+                char* tempo = pega_tempo();
+                fprintf(f, "%s,0,%s,%s,%s", parseiro[1], tempo, tempo, tempo);
+
+                for(int j = 0; j < 4096 - 3 - strlen(parseiro[1]); j++) {
+                    fprintf(f, " ");
+                }
+                fprintf(f, "|");
+                
+                fseek(f, 21*(contador_blocos2-1), SEEK_SET);
+                fprintf(f, "%s,-1", parseiro[1]);
+
+                fclose(f);
             }
 
-            fprintf(f, "%s,0,", parseiro[1]);
-
-            for(int j = 0; j < 4096 - 3 - strlen(parseiro[1]); j++) {
-                fprintf(f, " ");
+            else {
+                while((aux = getc(f)) != '\n');
+                char* tempo = pega_tempo();
+                while(conta_blocos > 1) {
+                    while(getc(f) != '|');
+                    conta_blocos--;
+                }
+                while(getc(f) != ',');
+                while(getc(f) != ',');
+                while(getc(f) != ',');
+                while(getc(f) != ',');
+                fprintf(f, "%s", tempo);
+                fclose(f);
             }
-            fprintf(f, "|");
-            
-            fseek(f, 21*(contador_blocos2-1), SEEK_SET);
-            fprintf(f, "%s,-1", parseiro[1]);
-
-            fclose(f);
-
         }
 
+        //rm "path_do_arquivo"
+        //rm /lalala/teste (remove um arquivo ou diretorio "teste" do path raiz "/lalala/")
         else if (strcmp(parseiro[0], "rm") == 0) {
             rm(parseiro[1]);
         }
 
+        //ls "path_da_pasta"
+        //ls /lalala/ (lista todos os arquivos e diretórios que encontram-se em "/lalala/")
         else if (strcmp(parseiro[0], "ls") == 0) {
             ls(parseiro[1]);
         }
 
+        //find "path_da_pasta" "path_do_arquivo"
+        //find /lalala/ /teste (imprime o caminho completo de todos os arquivos de nome "/teste" que estão dentro da pasta "/lalala" ou dentro de qualquer pasta dentro dela")
         else if (strcmp(parseiro[0], "find") == 0) {
             find_me(parseiro[1], parseiro[2]);
         }
 
+        //df (imprime as devidas informações sobre o sistema de arquivos)
         else if (strcmp(parseiro[0], "df") == 0) {
-            FILE* f = fopen("simulacao/arquivo_simula", "r+");
+            FILE* f = fopen(sistema_de_arquivos, "r+");
             int contador_arquivos = 0;
             int contador_diretorios = 0;
             int inicio_bloco[25600];
@@ -1166,6 +1282,7 @@ int main() {
 
         }
 
+        //umount (desmonta o sistema de arquivos alocado em "sistema_de_arquivos")
         else if (strcmp(parseiro[0], "umount") == 0) {
             printf("%s\n", sistema_de_arquivos);
             if(remove(sistema_de_arquivos) == 0)
@@ -1174,6 +1291,7 @@ int main() {
                 printf("erro na delecao do sistema de arquivos.\n");
         }
 
+        //sai (termina o processo e sai do programa)
         else if (strcmp(parseiro[0], "sai") == 0) {
             exit(0);
         }
